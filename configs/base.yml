@@ -1,0 +1,26 @@
+project:
+  name: equity-volatility-platform
+  timezone: America/New_York
+  day_count_basis: 365.0
+
+universe:
+  symbols:
+    - SPY
+  underlying_type: ETF
+
+pricing:
+  default_model: black_scholes
+  default_rate: 0.04
+  default_dividend_yield: 0.012
+  iv:
+    minimum_volatility: 1.0e-8
+    maximum_volatility: 10.0
+    price_tolerance: 1.0e-10
+    volatility_tolerance: 1.0e-10
+    max_iterations: 100
+
+paths:
+  raw_data: data/raw
+  interim_data: data/interim
+  processed_data: data/processed
+  reports: reports/generated
