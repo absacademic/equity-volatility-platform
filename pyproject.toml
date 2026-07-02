@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Research infrastructure for equity option pricing, implied volatility, surface features, and P&L attribution."
 readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "AGPLv3" }
 authors = [{ name = "Test" }]
 dependencies = [
     "numpy>=1.26",
