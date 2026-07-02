@@ -6,7 +6,7 @@ The initial research universe is **SPY**, chosen since it is a highly liquid ETF
 
 ## Current Status:
 
-Repo being set-up along with environment and basic pricing models and implied-volatility solver. Typer CLI interfaced with ordinary typed parameters included along with DuckDB table definitions, RUff linting/formattting, and a number of unit and integration tests.
+Repo being set-up along with environment and basic pricing models and implied-volatility solver. Typer CLI interfaced with ordinary typed parameters included along with DuckDB table definitions, RUFF linting/formattting, and a number of unit and integration tests.
 
 ## Startup
 
@@ -14,7 +14,7 @@ Repo being set-up along with environment and basic pricing models and implied-vo
 python -m venv .venv
 ```
 
-Activate the environment:
+You can now activate the environment.
 
 # Windows PowerShell
 .venv\Scripts\Activate.ps1
@@ -72,7 +72,7 @@ Note that the `--underlying` argument means spot under Black-Scholes and forward
 
 ## Some numerical conventions used
 
-- Ratesand divided yields are continuously compounded annual rate
+- Rates and divided yields are continuously compounded annual rate
 - Time to expiry in years
 - Black-Scholes uses a spot and continuous divided yield
 - Black-76 uses a forward and discounts the expected payoff at risk-free rate
@@ -83,7 +83,7 @@ Note that the `--underlying` argument means spot under Black-Scholes and forward
 
 ## Implied-volatility solver defined behavior
 
-The solver returns an `ImpliedVolResult` rather than raising for expected quote-quality failures.
+The solver returns an `ImpliedVolResult` rather than raising exceptions for expected quote-quality failures.
 
 It can have statuses of:
 - `success` : A finite implied volatility was recovered
@@ -150,7 +150,7 @@ equity-volatility-platform/
 
 ## Completion criterion
 
-`tests/test_acceptance.py` verifies the Week 1 acceptance path:
+`tests/test_acceptance.py` verifies the inital acceptance path:
 
 1. Generate a Black-Scholes option price.
 2. Recover the original volatility.
