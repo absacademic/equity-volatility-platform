@@ -6,7 +6,13 @@ The initial research universe is **SPY**, chosen since it is a highly liquid ETF
 
 ## Current Status:
 
+Inital phase: 
 Repo being set-up along with environment and basic pricing models and implied-volatility solver. Typer CLI interfaced with ordinary typed parameters included along with DuckDB table definitions, RUFF linting/formattting, and a number of unit and integration tests.
+
+Phase 2:
+Added a reproducible data pipeline for option quotes, underlying prices, interest rates, and event data. Raw quotes are normalized, aligned with underlying prices, checked for data-quality problems, and stored as clean and rejected Parquet datasets. The pipeline also creates analytical DuckDB views, metadata manifests, and data-quality reports.
+
+
 
 ## Startup
 
@@ -148,14 +154,80 @@ equity-volatility-platform/
 └── README.md
 ```
 
+## Data Ingestion
+The initial data universe is SPY.
+
+A single CSV can contain both option quotes and embedded underlying-price fields:
+
+```bash
+vol-platform ingest data/raw/sample_spy_quotes.csv
+```
+
+Standalone underlying, rate, and event files can also be supplied:
+
+```bash
+vol-platform ingest data/raw/sample_spy_quotes.csv \
+  --underlying data/raw/sample_spy_underlying.csv \
+  --rates data/raw/sample_spy_rates.csv \
+  --events data/raw/sample_spy_events.csv
+```
+
+The same sample pipeline can be run with:
+
+```bash
+make demo-ingest
+```
+
+Each input quote is retained and receives:
+
+  is_valid
+  rejection_reason
+  quote_quality_score
+
+The current checks cover missing or invalid fields, expired contracts, nonpositive and crossed quotes, duplicates, wide spreads, low liquidity, implausible moneyness, and stale or missing underlying-price alignments.
+
+Cleaning thresholds are configured in `configs/base.yml`.
+
+
+## Data outputs
+
+Clean and rejected option quotes are stored as partitioned Parquet files:
+
+```bash
+data/processed/options/clean/underlying_symbol=SPY/quote_date=YYYY-MM-DD/ data/processed/options/rejected/underlying_symbol=SPY/quote_date=YYYY-MM-DD/
+```
+
+Each ingestion run also creates:
+
+```bash
+data/processed/reference/
+data/processed/events/
+data/processed/metadata/
+data/processed/volatility.duckdb
+reports/generated/data-quality-<run_id>.md
+reports/generated/rejection-summary-<run_id>.csv
+```
+
+The DuckDB database contains these analytical views:
+
+  clean_quotes
+  rejected_quotes
+  daily_summaries
+  expiration_chains
+
 ## Completion criterion
 
-`tests/test_acceptance.py` verifies the inital acceptance path:
+`tests/test_week2_pipeline.py` verifies that one ingestion command:
 
-1. Generate a Black-Scholes option price.
-2. Recover the original volatility.
-3. Compare analytic delta and vega with central finite differences.
+Reads a raw option CSV.
+Normalizes option and underlying data.
+Aligns each quote with the latest available underlying price.
+Separates clean and rejected observations.
+Retains rejection reasons and quality scores.
+Writes partitioned Parquet files.
+Creates the DuckDB analytical views.
+Produces an ingestion manifest and data-quality report.
 
 ## TODO
 
-Next add ingestion adapters, quote cleaning, forward estimation from option pairs, rate/divided alignment, Parquet/DuckDB storage for SPY option chains
+Next add dividend alignment, forward estimation from call-put pairs, implied-volatility calculation over complete option chains, and surface-level diagnostics.

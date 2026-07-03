@@ -33,4 +33,7 @@ Thumbs.db
 /reports/generated/
 
 # Notebooks
-.ipynb_checkpoints/
+.ipynb_checkpoints/!/data/raw/sample_spy_quotes.csv
+!/data/raw/sample_spy_underlying.csv
+!/data/raw/sample_spy_rates.csv
+!/data/raw/sample_spy_events.csv

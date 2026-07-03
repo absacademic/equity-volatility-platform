@@ -1,4 +1,8 @@
 # Reports
 
-Will contain generated figures, tables, and final reports.
-Any large artifacts generated should be reproducible from code, and not committed.
+Generated Week 2 outputs are written to `reports/generated/`:
+
+- `data-quality-<run_id>.md` : acceptance, rejection, and alignment summary
+- `rejection-summary-<run_id>.csv` : rejection reason counts
+
+Reports are reproducible from the ingestion command

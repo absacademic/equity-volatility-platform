@@ -2,9 +2,11 @@
 
 import json
 from dataclasses import asdict
+from pathlib import Path
 
 import typer
 
+from vol_platform.data.pipeline import run_ingestion
 from vol_platform.pricing import black76, black_scholes
 from vol_platform.pricing.greeks import calculate_greeks
 from vol_platform.pricing.implied_vol import solve_implied_volatility
@@ -95,3 +97,43 @@ def implied_vol_command(
     typer.echo(json.dumps(asdict(result), indent=2, default=str))
     if not result.converged:
         raise typer.Exit(code=1)
+
+
+@app.command("ingest")
+def ingest_command(
+    input_file: Path = typer.Argument(..., exists=True, dir_okay=False),
+    underlying_file: Path | None = typer.Option(None, "--underlying", exists=True, dir_okay=False),
+    rates_file: Path | None = typer.Option(None, "--rates", exists=True, dir_okay=False),
+    events_file: Path | None = typer.Option(None, "--events", exists=True, dir_okay=False),
+    config_path: Path = typer.Option(Path("configs/base.yml"), "--config"),
+    output_dir: Path | None = typer.Option(None, "--output-dir"),
+    database_path: Path | None = typer.Option(None, "--database"),
+    source: str = typer.Option("local_csv", "--source"),
+) -> None:
+    # Convert raw option CSV data into clean and rejected analytical datasets
+
+    result = run_ingestion(
+        input_file,
+        underlying_file=underlying_file,
+        rates_file=rates_file,
+        events_file=events_file,
+        config_path=config_path,
+        output_dir=output_dir,
+        database_path=database_path,
+        source=source,
+    )
+    typer.echo(
+        json.dumps(
+            {
+                "run_id": result.run_id,
+                "input_rows": result.input_rows,
+                "clean_rows": result.clean_rows,
+                "rejected_rows": result.rejected_rows,
+                "output_dir": str(result.output_dir),
+                "database": str(result.database),
+                "report": str(result.report),
+                "manifest": str(result.manifest),
+            },
+            indent=2,
+        )
+    )

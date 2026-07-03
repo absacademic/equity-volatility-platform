@@ -1,0 +1,2 @@
+event_id,event_type,event_timestamp,title,symbols,source,expected
+FOMC-2026-07,macro,2026-07-29T18:00:00Z,FOMC rate decision,SPY,sample_calendar,true

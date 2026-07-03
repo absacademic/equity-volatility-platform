@@ -24,3 +24,14 @@ paths:
   interim_data: data/interim
   processed_data: data/processed
   reports: reports/generated
+
+data:
+  schema_version: "1.0.0"
+  alignment:
+    max_underlying_staleness_seconds: 300
+  cleaning:
+    max_relative_spread: 0.50
+    min_volume: 1
+    min_open_interest: 1
+    min_moneyness: 0.50
+    max_moneyness: 1.50
