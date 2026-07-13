@@ -9,7 +9,7 @@ import polars as pl
 
 
 def write_partitioned(frame: pl.DataFrame, root: Path, run_id: str) -> None:
-    # Write symbol/date partitions (Hive-style) with one file per partition 
+    # Write symbol/date partitions (Hive-style) with one file per partition
 
     root.mkdir(parents=True, exist_ok=True)
     if frame.is_empty():

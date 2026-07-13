@@ -27,6 +27,7 @@ from vol_platform.data.storage import (
     write_table,
 )
 
+
 @dataclass(frozen=True)
 class IngestionResult:
     run_id: str
@@ -37,6 +38,7 @@ class IngestionResult:
     database: Path
     report: Path
     manifest: Path
+
 
 def run_ingestion(
     input_file: str | Path,

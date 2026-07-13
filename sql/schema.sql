@@ -75,3 +75,28 @@ CREATE TABLE IF NOT EXISTS implied_volatilities (
     iterations INTEGER DEFAULT 0,
     residual DOUBLE
 );
+
+CREATE TABLE IF NOT EXISTS forward_estimates (
+    expiration DATE NOT NULL,
+    time_to_expiry DOUBLE NOT NULL,
+    interpolated_rate DOUBLE NOT NULL,
+    discount_factor DOUBLE NOT NULL,
+    forward DOUBLE,
+    pair_count INTEGER NOT NULL,
+    forward_std DOUBLE,
+    relative_dispersion DOUBLE,
+    forward_range DOUBLE,
+    average_pair_quality DOUBLE,
+    reliability VARCHAR NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS smile_model_comparison (
+    model VARCHAR NOT NULL,
+    weighting VARCHAR NOT NULL,
+    expiration_count INTEGER NOT NULL,
+    failed_fit_rate DOUBLE NOT NULL,
+    average_rmse DOUBLE,
+    maximum_residual DOUBLE,
+    average_coverage DOUBLE NOT NULL,
+    average_stability DOUBLE NOT NULL
+);

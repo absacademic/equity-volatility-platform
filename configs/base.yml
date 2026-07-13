@@ -13,6 +13,7 @@ pricing:
   default_rate: 0.04
   default_dividend_yield: 0.012
   iv:
+    initial_volatility: 0.20
     minimum_volatility: 1.0e-8
     maximum_volatility: 10.0
     price_tolerance: 1.0e-10
@@ -35,3 +36,11 @@ data:
     min_open_interest: 1
     min_moneyness: 0.50
     max_moneyness: 1.50
+
+surface:
+  spline_smoothing: 1.0e-7
+  forward:
+    max_pairs: 5
+    maximum_atm_distance: 0.10
+    reliable_relative_dispersion: 0.005
+    minimum_average_quality: 0.50

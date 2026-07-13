@@ -23,3 +23,9 @@ demo-ingest:
 		--underlying data/raw/sample_spy_underlying.csv \
 		--rates data/raw/sample_spy_rates.csv \
 		--events data/raw/sample_spy_events.csv
+
+demo-surface:
+	vol-platform synthetic-chain --output-dir data/interim/week3-demo
+	vol-platform surface data/interim/week3-demo/synthetic-clean-chain.parquet \
+		--rates data/interim/week3-demo/synthetic-rates.csv \
+		--output-dir data/processed/surfaces/demo

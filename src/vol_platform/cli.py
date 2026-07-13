@@ -10,6 +10,8 @@ from vol_platform.data.pipeline import run_ingestion
 from vol_platform.pricing import black76, black_scholes
 from vol_platform.pricing.greeks import calculate_greeks
 from vol_platform.pricing.implied_vol import solve_implied_volatility
+from vol_platform.surface.pipeline import run_surface_analysis
+from vol_platform.surface.synthetic import write_synthetic_inputs
 from vol_platform.types import OptionType, PricingModel
 
 app = typer.Typer(
@@ -137,3 +139,49 @@ def ingest_command(
             indent=2,
         )
     )
+
+
+@app.command("surface")
+def surface_command(
+    clean_quotes: Path = typer.Argument(..., exists=True),
+    rates_file: Path | None = typer.Option(None, "--rates", exists=True, dir_okay=False),
+    quote_date: str | None = typer.Option(None, "--date"),
+    config_path: Path = typer.Option(Path("configs/base.yml"), "--config"),
+    output_dir: Path | None = typer.Option(None, "--output-dir"),
+) -> None:
+    # Build one date of forward estimates, IV features, smile fits, and plots
+    result = run_surface_analysis(
+        clean_quotes,
+        rates_file=rates_file,
+        quote_date=quote_date,
+        config_path=config_path,
+        output_dir=output_dir,
+    )
+    typer.echo(
+        json.dumps(
+            {
+                "quote_date": str(result.quote_date),
+                "input_rows": result.input_rows,
+                "iv_rows": result.iv_rows,
+                "successful_fits": result.successful_fits,
+                "failed_fits": result.failed_fits,
+                "output_dir": str(result.output_dir),
+                "implied_volatility_dataset": str(result.implied_volatility_dataset),
+                "forward_summary": str(result.forward_summary),
+                "model_comparison": str(result.model_comparison),
+                "report": str(result.report),
+                "database": str(result.database),
+                "plots": [str(path) for path in result.plots],
+            },
+            indent=2,
+        )
+    )
+
+
+@app.command("synthetic-chain")
+def synthetic_chain_comamnd(
+    output_dir: Path = typer.Option(Path("data/interim/week3-demo"), "--output-dir"),
+) -> None:
+    # Write a clean chain and rate curve for demo
+    chain, rates = write_synthetic_inputs(output_dir)
+    typer.echo(json.dumps({"clean_chain": str(chain), "rates": str(rates)}, indent=2))

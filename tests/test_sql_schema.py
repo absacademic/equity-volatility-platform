@@ -20,8 +20,10 @@ def test_duckdb_schema_builds_all_canonical_tables() -> None:
     assert tables == {
         "dividends",
         "events",
+        "forward_estimates",
         "implied_volatilities",
         "option_quotes",
         "rate_curve",
+        "smile_model_comparison",
         "underlying_prices",
     }

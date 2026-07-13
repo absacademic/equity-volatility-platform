@@ -9,6 +9,7 @@ from typing import Any
 
 import polars as pl
 
+
 def align_underlying_prices(
     quotes: pl.DataFrame,
     underlying: pl.DataFrame,
@@ -47,6 +48,7 @@ def align_underlying_prices(
             columns["underlying_is_stale"].append(delay > max_staleness_seconds)
 
     return quotes.with_columns([pl.Series(name, values) for name, values in columns.items()])
+
 
 def align_rates(
     quotes: pl.DataFrame,

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from vol_platform.types import PricingModel
 
@@ -15,7 +15,11 @@ from vol_platform.types import PricingModel
 class IVSolverConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    inital_volatility: float = Field(default=0.20, gt=0.0)
+    initial_volatility: float = Field(
+        default=0.20,
+        gt=0.0,
+        validation_alias=AliasChoices("initial_volatility", "inital_volatility"),
+    )
     minimum_volatility: float = Field(default=1e-8, gt=0.0)
     maximum_volatility: float = Field(default=10.0, gt=0.0)
     price_tolerance: float = Field(default=1e-10, gt=0.0)
