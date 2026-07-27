@@ -1,4 +1,4 @@
-# Modular CSV adapters for option quotes, underlying prices, interest rates, and events
+# Modular CSV adapters for option quotes, prices, rates, dividends, and events
 
 from __future__ import annotations
 
@@ -211,17 +211,57 @@ class RateCSVAdapter:
         ).select([*self.columns, "source_file"])
 
 
+class DividendCSVAdapter:
+    aliases: ClassVar[dict[str, tuple[str, ...]]] = {
+        "symbol": ("ticker", "underlying_symbol"),
+        "ex_date": ("ex_dividend_date", "date"),
+        "amount": ("dividend", "cash_amount"),
+        "payment_date": ("pay_date",),
+        "known_timestamp": ("known_at", "published_at", "announcement_timestamp"),
+        "dividend_type": ("type",),
+    }
+    columns: ClassVar[list[str]] = [
+        "symbol",
+        "ex_date",
+        "amount",
+        "payment_date",
+        "known_timestamp",
+        "dividend_type",
+        "currency",
+        "source",
+    ]
+
+    def read(self, path: str | Path, source: str = "local_csv") -> pl.DataFrame:
+        frame = _add_missing(_rename_aliases(_read_csv(path), self.aliases), self.columns)
+        return frame.with_columns(
+            pl.col("symbol").cast(pl.String, strict=False).str.to_uppercase(),
+            _date("ex_date"),
+            _float("amount"),
+            _date("payment_date"),
+            _datetime("known_timestamp"),
+            pl.col("dividend_type")
+            .cast(pl.String, strict=False)
+            .fill_null("regular")
+            .str.to_lowercase(),
+            pl.col("currency").cast(pl.String, strict=False).fill_null("USD").str.to_uppercase(),
+            pl.col("source").cast(pl.String, strict=False).fill_null(source),
+            pl.lit(str(Path(path))).alias("source_file"),
+        ).select([*self.columns, "source_file"])
+
+
 class EventCSVAdapter:
     aliases: ClassVar[dict[str, tuple[str, ...]]] = {
         "event_timestamp": ("timestamp", "datetime"),
         "event_id": ("id",),
         "event_type": ("type",),
         "symbols": ("symbol", "tickers"),
+        "known_timestamp": ("known_at", "published_at", "as_of_timestamp"),
     }
     columns: ClassVar[list[str]] = [
         "event_id",
         "event_type",
         "event_timestamp",
+        "known_timestamp",
         "title",
         "symbols",
         "source",
@@ -232,6 +272,7 @@ class EventCSVAdapter:
         frame = _add_missing(_rename_aliases(_read_csv(path), self.aliases), self.columns)
         return frame.with_columns(
             _datetime("event_timestamp"),
+            _datetime("known_timestamp"),
             pl.col("event_id").cast(pl.String, strict=False),
             pl.col("event_type").cast(pl.String, strict=False).str.to_lowercase(),
             pl.col("title").cast(pl.String, strict=False),

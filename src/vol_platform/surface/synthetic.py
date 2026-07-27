@@ -116,11 +116,78 @@ def synthetic_clean_chain() -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
+def synthetic_dividends() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "symbol": ["SPY", "SPY"],
+            "ex_date": [date(2026, 7, 17), date(2026, 10, 16)],
+            "amount": [1.75, 1.80],
+            "payment_date": [date(2026, 8, 14), date(2026, 11, 13)],
+            "known_timestamp": [
+                datetime(2026, 6, 15, 12, 0, tzinfo=UTC),
+                datetime(2026, 6, 15, 12, 0, tzinfo=UTC),
+            ],
+            "dividend_type": ["regular", "regular"],
+            "currency": ["USD", "USD"],
+            "source": ["synthetic", "synthetic"],
+        }
+    )
+
+
+def synthetic_events() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "event_id": ["fomc-2026-07", "cpi-2026-08"],
+            "event_type": ["macro", "macro"],
+            "event_timestamp": [
+                datetime(2026, 7, 29, 18, 0, tzinfo=UTC),
+                datetime(2026, 8, 12, 12, 30, tzinfo=UTC),
+            ],
+            "known_timestamp": [
+                datetime(2026, 6, 1, 12, 0, tzinfo=UTC),
+                datetime(2026, 6, 1, 12, 0, tzinfo=UTC),
+            ],
+            "title": ["FOMC decision", "US CPI release"],
+            "symbols": ["SPY", "SPY"],
+            "source": ["synthetic", "synthetic"],
+            "expected": [True, True],
+        }
+    )
+
+
+def synthetic_underlying_history() -> pl.DataFrame:
+    rows = []
+    current = date(2026, 3, 20)
+    index = 0
+    while current < date(2026, 7, 1):
+        if current.weekday() < 5:
+            price_value = 565.0 * math.exp(0.0008 * index + 0.006 * math.sin(index / 5.0))
+            rows.append(
+                {
+                    "timestamp": datetime.combine(current, datetime.min.time(), tzinfo=UTC).replace(
+                        hour=20
+                    ),
+                    "symbol": "SPY",
+                    "last": price_value,
+                    "currency": "USD",
+                }
+            )
+            index += 1
+        current = date.fromordinal(current.toordinal() + 1)
+    return pl.DataFrame(rows)
+
+
 def write_synthetic_inputs(output_dir: str | Path) -> tuple[Path, Path]:
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     chain_path = output / "synthetic-clean-chain.parquet"
     rates_path = output / "synthetic-rates.csv"
+    dividend_path = output / "synthetic-dividends.csv"
+    event_path = output / "synthetic-events.csv"
+    history_path = output / "synthetic-underlying-history.csv"
     synthetic_clean_chain().write_parquet(chain_path)
     synthetic_rate_curve().write_csv(rates_path)
+    synthetic_dividends().write_csv(dividend_path)
+    synthetic_events().write_csv(event_path)
+    synthetic_underlying_history().write_csv(history_path)
     return chain_path, rates_path

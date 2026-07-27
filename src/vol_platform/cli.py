@@ -145,14 +145,22 @@ def ingest_command(
 def surface_command(
     clean_quotes: Path = typer.Argument(..., exists=True),
     rates_file: Path | None = typer.Option(None, "--rates", exists=True, dir_okay=False),
+    dividends_file: Path | None = typer.Option(None, "--dividends", exists=True, dir_okay=False),
+    events_file: Path | None = typer.Option(None, "--events", exists=True, dir_okay=False),
+    underlying_history_file: Path | None = typer.Option(
+        None, "--underlying-history", exists=True, dir_okay=False
+    ),
     quote_date: str | None = typer.Option(None, "--date"),
     config_path: Path = typer.Option(Path("configs/base.yml"), "--config"),
     output_dir: Path | None = typer.Option(None, "--output-dir"),
 ) -> None:
-    # Build one date of forward estimates, IV features, smile fits, and plots
+    # Build current surfaces plus point-in-time historical features
     result = run_surface_analysis(
         clean_quotes,
         rates_file=rates_file,
+        dividends_file=dividends_file,
+        events_file=events_file,
+        underlying_history_file=underlying_history_file,
         quote_date=quote_date,
         config_path=config_path,
         output_dir=output_dir,
@@ -170,8 +178,14 @@ def surface_command(
                 "forward_summary": str(result.forward_summary),
                 "model_comparison": str(result.model_comparison),
                 "report": str(result.report),
+                "arbitrage_report": str(result.arbitrage_report),
+                "arbitrage_diagnostics": str(result.arbitrage_diagnostics),
+                "surface_adjustments": str(result.surface_adjustments),
+                "standardized_delta_points": str(result.standardized_delta_points),
+                "daily_feature_table": str(result.daily_feature_table),
                 "database": str(result.database),
                 "plots": [str(path) for path in result.plots],
+                "historical_plots": [str(path) for path in result.historical_plots],
             },
             indent=2,
         )
@@ -180,8 +194,19 @@ def surface_command(
 
 @app.command("synthetic-chain")
 def synthetic_chain_comamnd(
-    output_dir: Path = typer.Option(Path("data/interim/week3-demo"), "--output-dir"),
+    output_dir: Path = typer.Option(Path("data/interim/week4-demo"), "--output-dir"),
 ) -> None:
-    # Write a clean chain and rate curve for demo
+    # Write deterministic chain, rate, dividend, event, and history inputs
     chain, rates = write_synthetic_inputs(output_dir)
-    typer.echo(json.dumps({"clean_chain": str(chain), "rates": str(rates)}, indent=2))
+    typer.echo(
+        json.dumps(
+            {
+                "clean_chain": str(chain),
+                "rates": str(rates),
+                "dividends": str(output_dir / "synthetic-dividends.csv"),
+                "events": str(output_dir / "synthetic-events.csv"),
+                "underlying_history": str(output_dir / "synthetic-underlying-history.csv"),
+            },
+            indent=2,
+        )
+    )

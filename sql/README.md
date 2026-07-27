@@ -1,5 +1,5 @@
 # SQL
 
-The `schema.sql` creates the DuckDB tables used by the ingestion and volatility-estimation pipeline
+`schema.sql` creates the canonical DuckDB tables used by ingestion, implied-volatility analysis, arbitrage diagnostics, standardized interpolation, and the daily feature pipeline.
 
-The Week 2 ingestion pipeline creates DuckDB views for `clean_quotes`, `rejected_quotes`, `daily_summaries`, and `expiration_chains` after each run
+Runtime pipelines may also create convenience views or tables for clean quotes, rejected quotes, daily summaries, expiration chains, fit details, and underlying history.

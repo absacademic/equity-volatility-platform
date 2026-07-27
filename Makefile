@@ -28,4 +28,7 @@ demo-surface:
 	vol-platform synthetic-chain --output-dir data/interim/week3-demo
 	vol-platform surface data/interim/week3-demo/synthetic-clean-chain.parquet \
 		--rates data/interim/week3-demo/synthetic-rates.csv \
+		--dividends data/interim/week4-demo/synthetic-dividends.csv \
+		--events data/interim/week4-demo/synthetic-events.csv \
+		--underlying-history data/interim/week4-demo/synthetic-underlying-history.csv \
 		--output-dir data/processed/surfaces/demo

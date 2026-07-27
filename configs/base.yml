@@ -44,3 +44,20 @@ surface:
     maximum_atm_distance: 0.10
     reliable_relative_dispersion: 0.005
     minimum_average_quality: 0.50
+  exercise_style: american
+  dividends:
+    use_forward_fallback: true
+    exclude_early_exercise_risk: true
+  arbitrage:
+    price_tolerance: 1.0e-6
+    variance_tolerance: 1.0e-10
+    calendar_tolerance: 1.0e-6
+    extrapolation_padding: 0.15
+    maximum_extrapolated_iv: 3.0
+    maximum_variance_multiple: 8.0
+  standardized:
+    extrapolation_limit: 0.15
+  historical:
+    annualization_days: 252
+    realized_windows: [5, 20, 60]
+    rolling_window: 20

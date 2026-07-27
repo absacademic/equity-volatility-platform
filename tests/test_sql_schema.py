@@ -18,6 +18,8 @@ def test_duckdb_schema_builds_all_canonical_tables() -> None:
         connection.close()
 
     assert tables == {
+        "arbitrage_diagnostics",
+        "daily_volatility_features",
         "dividends",
         "events",
         "forward_estimates",
@@ -25,5 +27,7 @@ def test_duckdb_schema_builds_all_canonical_tables() -> None:
         "option_quotes",
         "rate_curve",
         "smile_model_comparison",
+        "standardized_delta_points",
+        "surface_adjustments",
         "underlying_prices",
     }

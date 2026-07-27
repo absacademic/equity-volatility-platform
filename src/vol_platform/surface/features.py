@@ -34,6 +34,7 @@ def build_implied_volatility_dataset(
     forwards: pl.DataFrame,
     *,
     solver_options: dict[str, Any] | None = None,
+    exclude_early_exercise_risk: bool = True,
 ) -> pl.DataFrame:
     """Attach forward features and bid/mid/ask Black-76 implied volatilities."""
 
@@ -106,6 +107,10 @@ def build_implied_volatility_dataset(
                     and mid_iv is not None
                     and total_variance is not None
                     and estimate["reliability"] != "unreliable"
+                    and (
+                        not exclude_early_exercise_risk
+                        or not bool(row.get("early_exercise_risk", False))
+                    )
                 ),
             }
         )

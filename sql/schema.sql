@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS dividends (
     ex_date DATE NOT NULL,
     amount DOUBLE NOT NULL CHECK (amount >= 0),
     payment_date DATE,
+    known_timestamp TIMESTAMPTZ,
     dividend_type VARCHAR NOT NULL,
     currency VARCHAR DEFAULT 'USD',
     source VARCHAR
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_id VARCHAR PRIMARY KEY,
     event_type VARCHAR NOT NULL,
     event_timestamp TIMESTAMPTZ NOT NULL,
+    known_timestamp TIMESTAMPTZ,
     title VARCHAR NOT NULL,
     symbols VARCHAR[],
     source VARCHAR,
@@ -99,4 +101,81 @@ CREATE TABLE IF NOT EXISTS smile_model_comparison (
     maximum_residual DOUBLE,
     average_coverage DOUBLE NOT NULL,
     average_stability DOUBLE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS arbitrage_diagnostics (
+    quote_date DATE NOT NULL,
+    symbol VARCHAR NOT NULL,
+    expiration DATE NOT NULL,
+    source VARCHAR NOT NULL,
+    model VARCHAR,
+    weighting VARCHAR,
+    "check" VARCHAR NOT NULL,
+    option_type VARCHAR,
+    location DOUBLE,
+    value DOUBLE,
+    tolerance DOUBLE NOT NULL,
+    is_violation BOOLEAN NOT NULL,
+    severity VARCHAR NOT NULL,
+    resolved BOOLEAN NOT NULL,
+    message VARCHAR
+);
+
+CREATE TABLE IF NOT EXISTS surface_adjustments (
+    quote_date DATE NOT NULL,
+    symbol VARCHAR NOT NULL,
+    expiration DATE NOT NULL,
+    model VARCHAR NOT NULL,
+    weighting VARCHAR NOT NULL,
+    action VARCHAR NOT NULL,
+    "check" VARCHAR NOT NULL,
+    before_value DOUBLE,
+    after_value DOUBLE,
+    reason VARCHAR NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS standardized_delta_points (
+    quote_date DATE NOT NULL,
+    symbol VARCHAR NOT NULL,
+    expiration DATE NOT NULL,
+    time_to_expiry DOUBLE NOT NULL,
+    point VARCHAR NOT NULL,
+    option_type VARCHAR,
+    target_delta DOUBLE,
+    actual_delta DOUBLE,
+    delta_error DOUBLE,
+    delta_convention VARCHAR NOT NULL,
+    strike DOUBLE,
+    forward_moneyness DOUBLE,
+    implied_volatility DOUBLE,
+    total_variance DOUBLE,
+    model VARCHAR,
+    weighting VARCHAR,
+    status VARCHAR NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS daily_volatility_features (
+    quote_date DATE NOT NULL,
+    quote_timestamp TIMESTAMPTZ NOT NULL,
+    symbol VARCHAR NOT NULL,
+    expiration DATE NOT NULL,
+    time_to_expiry DOUBLE NOT NULL,
+    forward DOUBLE,
+    atm_implied_volatility DOUBLE,
+    downside_skew_25 DOUBLE,
+    risk_reversal_25 DOUBLE,
+    butterfly_25 DOUBLE,
+    wing_curvature_10_25 DOUBLE,
+    atm_term_structure_slope DOUBLE,
+    skew_term_structure_slope DOUBLE,
+    iv_bid_ask_width DOUBLE,
+    surface_residual_rmse DOUBLE,
+    realized_volatility_20d DOUBLE,
+    vrp_volatility_20d DOUBLE,
+    vrp_variance_20d DOUBLE,
+    event_count_to_expiry INTEGER,
+    material_arbitrage_violation_count INTEGER NOT NULL,
+    standardized_points_complete BOOLEAN NOT NULL,
+    chain_valid BOOLEAN NOT NULL,
+    PRIMARY KEY (quote_date, symbol, expiration)
 );

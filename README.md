@@ -17,6 +17,13 @@ Added an implied-volatility smile and surface pipeline. The pipeline calculates 
 
 Cubic-spline and SVI smiles are fitted using equal, vega, spread, and quote-quality weighting. The models are compared using RMSE, maximum residual, coverage, stability, and failed-fit rates. The pipeline also produces smile, residual, surface, bid-ask-band, and ATM term-structure plots.
 
+Phase 4:
+
+Added no-arbitrage diagnostics, dividend and early-exercise adjustments, standardized delta-point interpolation, event-linked volatility features, and historical surface comparisons.
+
+The pipeline now checks midpoint prices, executable bid-ask prices, and fitted surfaces separately for strike-monotonicity, butterfly-convexity, negative-total-variance, calendar-consistency, and extrapolation violations. Small numerical errors can be adjusted, while materially invalid surfaces are rejected. Every adjustment is recorded.
+
+The platform interpolates 10-delta put, 25-delta put, ATM, 25-delta call, and 10-delta call volatility points. It produces one point-in-time feature row per symbol, date, and expiration containing volatility, skew, risk-reversal, butterfly, curvature, term-structure, residual, realized-volatility, volatility-risk-premium, event, and historical-comparison features.
 
 
 ## Startup
@@ -201,13 +208,36 @@ For one quote date:
 vol-platform surface data/processed/options/clean --rates data/raw/sample_spy_rates.csv --date 2026-07-01
 ```
 
-A deterministic synthetic chain is included for testing:
+Generate and analyze a synthetic Week 4 dataset:
 
 ```bash
-vol-platform synthetic-chain --output-dir data/interim/week3-demo
-vol-platform surface data/interim/week3-demo/synthetic-clean-chain.parquet --rates data/interim/week3-demo/synthetic-rates.csv --output-dir data/processed/surfaces/demo
+vol-platform synthetic-chain --output-dir data/interim/week4-demo
+
+vol-platform surface data/interim/week4-demo/synthetic-clean-chain.parquet \
+  --rates data/interim/week4-demo/synthetic-rates.csv \
+  --dividends data/interim/week4-demo/synthetic-dividends.csv \
+  --events data/interim/week4-demo/synthetic-events.csv \
+  --underlying-history data/interim/week4-demo/synthetic-underlying-history.csv \
+  --output-dir data/processed/surfaces/demo
 ```
-^Run these commands directly instead of using Makefile, in most cases.
+
+On systems with Make installed, the same workflow can be run with:
+```bash
+make demo-surface
+```
+
+On Windows PowerShell, run:
+
+```bash
+vol-platform synthetic-chain --output-dir data/interim/week4-demo
+
+vol-platform surface data/interim/week4-demo/synthetic-clean-chain.parquet `
+  --rates data/interim/week4-demo/synthetic-rates.csv `
+  --dividends data/interim/week4-demo/synthetic-dividends.csv `
+  --events data/interim/week4-demo/synthetic-events.csv `
+  --underlying-history data/interim/week4-demo/synthetic-underlying-history.csv `
+  --output-dir data/processed/surfaces/demo
+```
 
 For each expiration, the forward estimator:
 
@@ -276,14 +306,27 @@ plots/residuals.png
 plots/surface.png 
 plots/bid_ask_band.png 
 plots/atm_term_structure.png
+arbitrage-diagnostics.csv
+surface-adjustments.csv
+arbitrage-report.md
+standardized-delta-points.csv
+daily-volatility-features.parquet
+daily-volatility-features.csv
+plots/historical_atm_volatility.png
+plots/historical_skew.png
+plots/historical_vrp.png
 
-The model-comparison table reports:
+The arbitrage diagnostic table separates violations found in midpoint prices, executable bid-ask prices, and fitted surfaces. The adjustment table records any variance floor, refitting control, or surface rejection.
 
-- Average RMSE
-- Maximum absolute residual
-- Average coverage
-- Average stability
-- Failed-fit rate
+The standardized-delta table contains:
+
+10-delta put
+25-delta put
+ATM
+25-delta call
+10-delta call
+
+The daily volatility-feature table contains one row per symbol, quote date, and expiration. It includes ATM volatility, downside skew, risk reversal, butterfly, curvature, term-structure slopes, IV bid-ask width, fit residuals, realized volatility, volatility-risk-premium measures, event features, historical changes, z-scores, percentiles, and cross-sectional ranks where applicable.
 
 The DuckDB database contains:
 
@@ -292,6 +335,11 @@ forward_estimates
 forward_pairs
 smile_fit_details
 model_comparison
+arbitrage_diagnostics
+surface_adjustments
+standardized_delta_points
+daily_volatility_features
+underlying_history
 
 ## Some numerical conventions
 - Expiration defaults to 4:00 p.m. America/New_York
@@ -303,23 +351,34 @@ model_comparison
 - Implied volatilities are calculated using Black-76 and the parity-estimated forward
 - Spline stability is evaluated from finite positive predictions and normalized curve curvature
 - SPY options are American-style, while Black-76 is a European model. Early-exercise and dividend effects can therefore appear as parity dispersion or implied-volatility noise
+- Dividend adjustments use only dividend information known by the quote timestamp
+- Event features use only events known by the quote timestamp
+- Realized-volatility windows use underlying prices strictly before the feature date
+- Historical rolling and expanding statistics use only the current and previous feature rows
+- Standardized deltas use the Black-76 discounted-forward delta convention
+- Fitted smiles are controlled before they are selected for standardized interpolation
+- Small numerical negative variances may be floored, but material arbitrage violations cause surface rejection
+- Early-exercise-risk contracts are excluded from parity estimation and smile fitting by default
+- Invalid chains remain in the feature table with `chain_valid = false`
 
 ## Completion criterion
 
-`tests/test_week3_pipeline.py` verifies that one surface command:
+`tests/test_week4_pipeline.py` verifies that one surface workflow:
 
-Reads one date of clean option quotes
-Interpolates rates and calculates exact times to expiration
-Estimates forwards from multiple near-ATM call-put pairs
-Reports forward dispersion and reliability
-Calculates bid, midpoint, and ask implied volatilities
-Adds moneyness, delta, vega, and total variance
-Fits cubic-spline and SVI smiles
-Evaluates all four weighting methods
-Writes model-comparison and fit-detail tables
-Creates a queryable DuckDB database
-Produces all five requested visualizations
+- Reads clean option quotes and all optional point-in-time reference inputs
+- Applies dividend and early-exercise adjustments
+- Diagnoses midpoint, executable, and fitted-surface arbitrage violations separately
+- Records surface controls and rejections
+- Interpolates five standardized delta points per expiration
+- Calculates volatility, skew, butterfly, curvature, and term-structure features
+- Calculates realized-volatility and volatility-risk-premium measures
+- Links known events without look-ahead bias
+- Calculates rolling z-scores, expanding z-scores, percentiles, and applicable cross-sectional ranks
+- Creates historical volatility, skew, and VRP charts
+- Writes all diagnostic, standardized-point, feature, report, manifest, and DuckDB outputs
+- Produces exactly one quality-controlled feature row per symbol, date, and expiration
+- Retains invalid chains as explicitly flagged feature rows
 
 ## TODO
 
-Next add no-arbitrage surface diagnostics, dividend and early-exercise adjustments, event-linked volatility features, and historical surface comparisons
+Next add event-study analysis, trading-strategy backtests, transaction-cost modeling, and options P&L attribution

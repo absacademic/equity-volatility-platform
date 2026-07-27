@@ -10,3 +10,6 @@
 - `processed/volatility.duckdb`: analytical DuckDB views
 
 Market data files to be excluded from Git, notwithstanding small `sample_spy_*` files to test pipeline
+- `processed/surfaces/`: arbitrage diagnostics, standardized points, daily feature tables, reports, and charts
+
+Small `sample_spy_*` files are retained for adapter and command demonstrations. Market-sized source data remains excluded from Git.
