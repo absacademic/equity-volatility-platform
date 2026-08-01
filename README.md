@@ -35,7 +35,9 @@ python -m venv .venv
 You can now activate the environment.
 
 ## Windows PowerShell
+```bash
 .venv\Scripts\Activate.ps1
+```
 
 Install the package and development tools:
 
@@ -50,6 +52,32 @@ Run all checks:
 ruff check .
 ruff format --check .
 pytest --cov=vol_platform --cov-report=term-missing
+```
+
+## Linux Setup
+
+To use this project on Linux-based systems, the following command-structure may be run:
+
+```bash
+git clone https://github.com/absacademic/equity-volatility-platform.git
+cd equity-volatility-platform
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+
+ruff check .
+ruff format --check .
+pytest --cov=vol_platform --cov-report=term-missing
+```
+
+Note that a Docker image may require installing `tzdata`:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y tzdata
 ```
 
 ## CLI examples 
