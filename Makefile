@@ -25,9 +25,9 @@ demo-ingest:
 		--events data/raw/sample_spy_events.csv
 
 demo-surface:
-	vol-platform synthetic-chain --output-dir data/interim/week3-demo
-	vol-platform surface data/interim/week3-demo/synthetic-clean-chain.parquet \
-		--rates data/interim/week3-demo/synthetic-rates.csv \
+	vol-platform synthetic-chain --output-dir data/interim/week4-demo
+	vol-platform surface data/interim/week4-demo/synthetic-clean-chain.parquet \
+		--rates data/interim/week4-demo/synthetic-rates.csv \
 		--dividends data/interim/week4-demo/synthetic-dividends.csv \
 		--events data/interim/week4-demo/synthetic-events.csv \
 		--underlying-history data/interim/week4-demo/synthetic-underlying-history.csv \
