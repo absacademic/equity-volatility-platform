@@ -58,6 +58,10 @@ def test_standardized_points_and_daily_rows_are_complete() -> None:
     assert features["chain_valid"].all()
     assert features["atm_implied_volatility"].null_count() == 0
     assert features["downside_skew_25"].null_count() == 0
+    assert "total_option_volume" in features.columns
+    assert "total_open_interest" in features.columns
+    assert features["total_option_volume"].min() >= 0
+    assert features["total_open_interest"].min() >= 0
 
 
 def test_later_known_dividend_is_not_used() -> None:

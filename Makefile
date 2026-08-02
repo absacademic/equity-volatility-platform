@@ -1,4 +1,4 @@
-.PHONY: install lint format test check
+.PHONY: install lint format test check demo-ingest demo-surface demo-event-study
 
 install:
 	python -m pip install -e ".[dev]"
@@ -32,3 +32,10 @@ demo-surface:
 		--events data/interim/week4-demo/synthetic-events.csv \
 		--underlying-history data/interim/week4-demo/synthetic-underlying-history.csv \
 		--output-dir data/processed/surfaces/demo
+
+demo-event-study:
+	vol-platform synthetic-event-study --output-dir data/interim/week5-demo
+	vol-platform event-study data/interim/week5-demo/synthetic-week5-surface-features.csv \
+		--events data/interim/week5-demo/synthetic-week5-events.csv \
+		--underlying data/interim/week5-demo/synthetic-week5-underlying.csv \
+		--output-dir data/processed/event-studies/demo

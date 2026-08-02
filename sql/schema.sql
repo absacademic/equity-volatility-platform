@@ -170,6 +170,8 @@ CREATE TABLE IF NOT EXISTS daily_volatility_features (
     skew_term_structure_slope DOUBLE,
     iv_bid_ask_width DOUBLE,
     surface_residual_rmse DOUBLE,
+    total_option_volume BIGINT,
+    total_open_interest BIGINT,
     realized_volatility_20d DOUBLE,
     vrp_volatility_20d DOUBLE,
     vrp_variance_20d DOUBLE,
@@ -178,4 +180,56 @@ CREATE TABLE IF NOT EXISTS daily_volatility_features (
     standardized_points_complete BOOLEAN NOT NULL,
     chain_valid BOOLEAN NOT NULL,
     PRIMARY KEY (quote_date, symbol, expiration)
+);
+
+CREATE TABLE IF NOT EXISTS event_study_events (
+    event_id VARCHAR PRIMARY KEY,
+    event_type VARCHAR NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL,
+    known_timestamp TIMESTAMPTZ,
+    market_session VARCHAR NOT NULL,
+    event_date DATE NOT NULL,
+    reaction_date DATE NOT NULL,
+    title VARCHAR,
+    symbols VARCHAR,
+    source VARCHAR,
+    expected BOOLEAN NOT NULL,
+    point_in_time_valid BOOLEAN NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS event_study_observations (
+    event_id VARCHAR PRIMARY KEY,
+    event_timestamp TIMESTAMPTZ NOT NULL,
+    period VARCHAR NOT NULL,
+    symbol VARCHAR NOT NULL,
+    atm_volatility DOUBLE,
+    skew DOUBLE,
+    term_structure DOUBLE,
+    expected_move DOUBLE,
+    volume_change DOUBLE,
+    open_interest_change DOUBLE,
+    iv_percentile DOUBLE,
+    surface_dislocation DOUBLE,
+    signed_return DOUBLE,
+    absolute_return DOUBLE,
+    expected_minus_realized_move DOUBLE,
+    market_overestimated BOOLEAN,
+    post_event_iv_collapse DOUBLE,
+    atm_volatility_change DOUBLE,
+    skew_change DOUBLE,
+    long_straddle_gross_return DOUBLE,
+    estimated_transaction_cost DOUBLE,
+    long_straddle_net_return DOUBLE,
+    delta_hedged_straddle_return DOUBLE
+);
+
+CREATE TABLE IF NOT EXISTS event_strategy_results (
+    event_id VARCHAR PRIMARY KEY,
+    event_timestamp TIMESTAMPTZ NOT NULL,
+    period VARCHAR NOT NULL,
+    strategy_position DOUBLE NOT NULL,
+    strategy_gross_return DOUBLE NOT NULL,
+    estimated_transaction_cost DOUBLE NOT NULL,
+    strategy_net_return DOUBLE NOT NULL,
+    strategy_cumulative_return DOUBLE NOT NULL
 );

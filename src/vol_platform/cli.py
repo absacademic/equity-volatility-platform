@@ -7,6 +7,8 @@ from pathlib import Path
 import typer
 
 from vol_platform.data.pipeline import run_ingestion
+from vol_platform.event_study.pipeline import run_event_study
+from vol_platform.event_study.synthetic import write_synthetic_event_study_inputs
 from vol_platform.pricing import black76, black_scholes
 from vol_platform.pricing.greeks import calculate_greeks
 from vol_platform.pricing.implied_vol import solve_implied_volatility
@@ -206,6 +208,69 @@ def synthetic_chain_comamnd(
                 "dividends": str(output_dir / "synthetic-dividends.csv"),
                 "events": str(output_dir / "synthetic-events.csv"),
                 "underlying_history": str(output_dir / "synthetic-underlying-history.csv"),
+            },
+            indent=2,
+        )
+    )
+
+
+@app.command("synthetic-event-study")
+def synthetic_event_study_command(
+    output_dir: Path = typer.Option(Path("data/interim/week5-demo"), "--output-dir"),
+) -> None:
+    # Write deterministic event, underlying, and surface-feature inputs
+    events, underlying, features = write_synthetic_event_study_inputs(output_dir)
+    typer.echo(
+        json.dumps(
+            {
+                "events": str(events),
+                "underlying": str(underlying),
+                "surface_features": str(features),
+            },
+            indent=2,
+        )
+    )
+
+
+@app.command("event-study")
+def event_study_command(
+    daily_features: Path = typer.Argument(..., exists=True, dir_okay=False),
+    events_file: Path = typer.Option(..., "--events", exists=True, dir_okay=False),
+    underlying_file: Path = typer.Option(..., "--underlying", exists=True, dir_okay=False),
+    symbol: str = typer.Option("SPY", "--symbol"),
+    config_path: Path = typer.Option(Path("configs/base.yml"), "--config"),
+    output_dir: Path | None = typer.Option(None, "--output-dir"),
+) -> None:
+    # Run point-in-time event analysis, baseline models, and cost-aware backtests
+    result = run_event_study(
+        daily_features,
+        events_file,
+        underlying_file,
+        symbol=symbol,
+        config_path=config_path,
+        output_dir=output_dir,
+    )
+    typer.echo(
+        json.dumps(
+            {
+                "output_dir": str(result.output_dir),
+                "point_in_time_events": str(result.point_in_time_events),
+                "event_windows": str(result.event_windows),
+                "event_dataset": str(result.event_dataset),
+                "summary_analysis": str(result.summary_analysis),
+                "regime_comparison": str(result.regime_comparison),
+                "model_coefficients": str(result.model_coefficients),
+                "model_performance": str(result.model_performance),
+                "coefficient_stability": str(result.coefficient_stability),
+                "walk_forward_results": str(result.walk_forward_results),
+                "walk_forward_performance": str(result.walk_forward_performance),
+                "strategy_backtest": str(result.strategy_backtest),
+                "strategy_summary": str(result.strategy_summary),
+                "pnl_attribution": str(result.pnl_attribution),
+                "conclusion": str(result.conclusion),
+                "report": str(result.report),
+                "database": str(result.database),
+                "plots": [str(path) for path in result.plots],
             },
             indent=2,
         )

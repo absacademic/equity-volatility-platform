@@ -61,3 +61,24 @@ surface:
     annualization_days: 252
     realized_windows: [5, 20, 60]
     rolling_window: 20
+
+event_study:
+  pre_event_days: 20
+  post_event_days: 5
+  target_dte_days: 30
+  annualization_days: 252
+  train_fraction: 0.60
+  validation_fraction: 0.20
+  minimum_walk_forward_train: 12
+  ridge: 1.0e-6
+  fixed_cost_bps: 8.0
+  spread_cost_multiplier: 0.50
+  vega_scale: 0.25
+  features:
+    - atm_volatility
+    - skew
+    - term_structure
+    - volume_change
+    - open_interest_change
+    - iv_percentile
+    - surface_dislocation

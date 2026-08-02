@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,6 @@ import polars as pl
 from vol_platform.pricing.black76 import price as black76_price
 from vol_platform.surface.evaluation import best_fits_by_expiration_and_model
 from vol_platform.surface.models import SmileFit
-
 
 DIAGNOSTIC_SCHEMA = {
     "quote_date": pl.Date,
@@ -210,7 +210,7 @@ def _market_calendar_diagnostics(iv_data: pl.DataFrame, tolerance: float) -> lis
         ["quote_date", "underlying_symbol"], maintain_order=True
     ):
         expirations = symbol_frame["expiration"].unique(maintain_order=True).to_list()
-        for short_expiration, long_expiration in zip(expirations, expirations[1:], strict=False):
+        for short_expiration, long_expiration in pairwise(expirations):
             short = symbol_frame.filter(pl.col("expiration") == short_expiration).sort(
                 "forward_moneyness"
             )
@@ -427,7 +427,7 @@ def apply_surface_controls(
                     by_expiration[updated[index].expiration]["time_to_expiry"].median()
                 )
             )
-            for short_index, long_index in zip(indices, indices[1:], strict=False):
+            for short_index, long_index in pairwise(indices):
                 short_fit, long_fit = updated[short_index], updated[long_index]
                 lower = max(float(short_fit.x_min), float(long_fit.x_min))
                 upper = min(float(short_fit.x_max), float(long_fit.x_max))
@@ -606,9 +606,7 @@ def _fitted_diagnostics(
             )
         )
 
-    for short_expiration, long_expiration in zip(
-        ordered_expirations, ordered_expirations[1:], strict=False
-    ):
+    for short_expiration, long_expiration in pairwise(ordered_expirations):
         short_fit, long_fit = selected[short_expiration], selected[long_expiration]
         lower = max(float(short_fit.x_min), float(long_fit.x_min))
         upper = min(float(short_fit.x_max), float(long_fit.x_max))

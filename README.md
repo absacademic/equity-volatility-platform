@@ -1,8 +1,8 @@
 # Equity Volatility Research Platform
 
-A Python-based research platform that performs equity-option pricing, implied-volatility estimation, surface features, event studies, strategy backtesting, and options P&L attribution (most features in progress).
+A Python-based research platform for equity-option pricing, implied-volatility estimation, volatility-surface analysis, point-in-time event studies, strategy backtesting, and options P&L attribution.
 
-The initial research universe is **SPY**, chosen since it is a highly liquid ETF.
+The initial research universe is **SPY**, chosen because it is a highly liquid ETF.
 
 ## Current Status:
 
@@ -24,6 +24,14 @@ Added no-arbitrage diagnostics, dividend and early-exercise adjustments, standar
 The pipeline now checks midpoint prices, executable bid-ask prices, and fitted surfaces separately for strike-monotonicity, butterfly-convexity, negative-total-variance, calendar-consistency, and extrapolation violations. Small numerical errors can be adjusted, while materially invalid surfaces are rejected. Every adjustment is recorded.
 
 The platform interpolates 10-delta put, 25-delta put, ATM, 25-delta call, and 10-delta call volatility points. It produces one point-in-time feature row per symbol, date, and expiration containing volatility, skew, risk-reversal, butterfly, curvature, term-structure, residual, realized-volatility, volatility-risk-premium, event, and historical-comparison features.
+
+Phase 5:
+
+Added a point-in-time event-study pipeline that tests whether volatility-surface features observed before CPI releases, Federal Reserve meetings, earnings announcements, or other dated market events predict whether the options market overestimates or underestimates the subsequent move.
+
+The pipeline constructs trading-day windows from 20 days before through 5 days after each event. It measures pre-event ATM volatility, skew, term structure, expected move, volume and open-interest changes, IV percentile, and surface dislocation. It then calculates realized event moves, expected-versus-realized errors, post-event IV collapse, changes in skew and ATM volatility, and a cost-adjusted daily straddle approximation.
+
+Baseline linear and logistic regressions use chronological training, validation, and test periods rather than random splits. The outputs include coefficients, approximate 95% confidence intervals, out-of-sample metrics, coefficient stability, expanding walk-forward results, transaction-cost-aware strategy backtests, P&L attribution, and a clearly stated research conclusion.
 
 
 ## Startup
@@ -254,19 +262,6 @@ On systems with Make installed, the same workflow can be run with:
 make demo-surface
 ```
 
-On Windows PowerShell, run:
-
-```bash
-vol-platform synthetic-chain --output-dir data/interim/week4-demo
-
-vol-platform surface data/interim/week4-demo/synthetic-clean-chain.parquet `
-  --rates data/interim/week4-demo/synthetic-rates.csv `
-  --dividends data/interim/week4-demo/synthetic-dividends.csv `
-  --events data/interim/week4-demo/synthetic-events.csv `
-  --underlying-history data/interim/week4-demo/synthetic-underlying-history.csv `
-  --output-dir data/processed/surfaces/demo
-```
-
 For each expiration, the forward estimator:
 
 - Matches calls and puts with the same strike
@@ -291,6 +286,47 @@ The smile models are:
 - Raw SVI fitted to total variance
 
 Both models are evaluated using equal, vega, inverse-spread, and quote-quality weighting.
+
+Generate and analyze a synthetic event-study dataset:
+
+```bash
+vol-platform synthetic-event-study --output-dir data/interim/week5-demo 
+
+vol-platform event-study data/interim/week5-demo/synthetic-week5-surface-features.csv \ 
+  --events data/interim/week5-demo/synthetic-week5-events.csv \ --underlying data/interim/week5-demo/synthetic-week5-underlying.csv \ --output-dir data/processed/event-studies/demo
+```
+
+On systems with Make installed, the same workflow can be run with:
+```bash
+make demo-event-study
+```
+
+On Windows PowerShell, run:
+
+```bash
+vol-platform synthetic-event-study --output-dir data/interim/week5-demo 
+
+vol-platform event-study data/interim/week5-demo/synthetic-week5-surface-features.csv ` 
+  --events data/interim/week5-demo/synthetic-week5-events.csv ` --underlying data/interim/week5-demo/synthetic-week5-underlying.csv ` --output-dir data/processed/event-studies/demo
+```
+
+To perform real event-study, replace the synthetic files with:
+- Daily volatility-feature CSV or Parquet file
+- Point-in-time event CSV
+- Daily underlying-price CSV
+
+The event file should contain:
+
+event_id
+event_type
+event_timestamp
+known_timestamp
+title
+symbols
+source
+expected
+
+Only surface observations timestamped before an event are used. Events known only after their event timestamp are marked invalid and excluded from modeling.
 
 ## Data outputs
 
@@ -369,6 +405,42 @@ standardized_delta_points
 daily_volatility_features
 underlying_history
 
+## Event-study outputs
+
+Each event-study output creates:
+point-in-time-events.parquet
+point-in-time-events.csv
+event-windows.parquet
+event-windows.csv
+event-study-dataset.parquet
+event-study-dataset.csv
+summary-analysis.csv
+regime-comparison.csv
+model-coefficients.csv
+model-performance.csv
+coefficient-stability.csv
+walk-forward-results.parquet
+walk-forward-results.csv
+walk-forward-performance.csv
+strategy-backtest.parquet
+strategy-backtest.csv
+strategy-summary.csv
+pnl-attribution.parquet
+pnl-attribution.csv
+research-conclusion.md
+event-study-report.json
+event-study.duckdb
+plots/expected_vs_realized.png
+plots/surface_dislocation.png
+plots/linear_coefficients.png
+plots/strategy_backtest.png
+
+The baseline linear model predicts the difference between the expected and realized event move. The logistic model predicts whether the expected move exceeds the realized move.
+
+The strategy shorts the event straddle when the linear model predicts overestimation and buys it when the model predicts underestimation. Results are reported before and after estimated fixed and spread-based transaction costs and are compared with an always-short-straddle baseline.
+
+The current straddle P&L is a daily approximation. Exact contract-level P&L would require actual option entry and exit quotes, contract multipliers, Greeks, hedge transactions, and execution timestamps.
+
 ## Some numerical conventions
 - Expiration defaults to 4:00 p.m. America/New_York
 - Time to expiration uses exact elapsed seconds divided by the configured day-count basis
@@ -389,24 +461,11 @@ underlying_history
 - Early-exercise-risk contracts are excluded from parity estimation and smile fitting by default
 - Invalid chains remain in the feature table with `chain_valid = false`
 
-## Completion criterion
-
-`tests/test_week4_pipeline.py` verifies that one surface workflow:
-
-- Reads clean option quotes and all optional point-in-time reference inputs
-- Applies dividend and early-exercise adjustments
-- Diagnoses midpoint, executable, and fitted-surface arbitrage violations separately
-- Records surface controls and rejections
-- Interpolates five standardized delta points per expiration
-- Calculates volatility, skew, butterfly, curvature, and term-structure features
-- Calculates realized-volatility and volatility-risk-premium measures
-- Links known events without look-ahead bias
-- Calculates rolling z-scores, expanding z-scores, percentiles, and applicable cross-sectional ranks
-- Creates historical volatility, skew, and VRP charts
-- Writes all diagnostic, standardized-point, feature, report, manifest, and DuckDB outputs
-- Produces exactly one quality-controlled feature row per symbol, date, and expiration
-- Retains invalid chains as explicitly flagged feature rows
-
 ## TODO
 
-Next add event-study analysis, trading-strategy backtests, transaction-cost modeling, and options P&L attribution
+Next...
+Apply the event-study pipeline to a longer real-market history of CPI, FOMC, earnings, and large-market-move events
+Replace the daily straddle approximation with exact contract-level option and hedge P&L
+Test alternative holding periods and transaction-cost assumptions
+Add nonlinear models only after the chronological baseline results are stable
+Compare results across individual equities, ETFs, and index products

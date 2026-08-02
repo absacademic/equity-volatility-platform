@@ -13,7 +13,6 @@ import polars as pl
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
-
 HISTORICAL_COLUMNS = (
     "atm_implied_volatility",
     "downside_skew_25",
@@ -21,6 +20,8 @@ HISTORICAL_COLUMNS = (
     "butterfly_25",
     "iv_bid_ask_width",
     "surface_residual_rmse",
+    "total_option_volume",
+    "total_open_interest",
     "realized_volatility_20d",
     "vrp_variance_20d",
 )

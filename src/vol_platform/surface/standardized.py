@@ -10,7 +10,6 @@ import polars as pl
 from vol_platform.pricing.greeks import black76_greeks
 from vol_platform.surface.models import SmileFit
 
-
 POINT_NAMES = ("10d_put", "25d_put", "atm", "25d_call", "10d_call")
 
 POINT_SCHEMA = {
@@ -218,6 +217,12 @@ def _count_true(frame: pl.DataFrame, column: str) -> int:
     return int(frame[column].sum()) if column in frame.columns else 0
 
 
+def _sum_or_default(frame: pl.DataFrame, column: str) -> int:
+    if column not in frame.columns:
+        return 0
+    return int(frame[column].fill_null(0).sum())
+
+
 def build_daily_volatility_features(
     points: pl.DataFrame,
     iv_data: pl.DataFrame,
@@ -281,6 +286,8 @@ def build_daily_volatility_features(
                 frame, "dividend_yield_estimate"
             ),
             "early_exercise_risk_count": _count_true(frame, "early_exercise_risk"),
+            "total_option_volume": _sum_or_default(frame, "volume"),
+            "total_open_interest": _sum_or_default(frame, "open_interest"),
             "iv_10d_put": put_10,
             "iv_25d_put": put_25,
             "atm_implied_volatility": atm,
