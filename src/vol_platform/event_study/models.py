@@ -180,9 +180,7 @@ def _performance_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "rmse": float(np.sqrt(np.mean(residual**2))),
                     "mae": float(np.mean(np.abs(residual))),
                     "r_squared": (
-                        1.0 - float(np.sum(residual**2)) / denominator
-                        if denominator > 0
-                        else None
+                        1.0 - float(np.sum(residual**2)) / denominator if denominator > 0 else None
                     ),
                     "directional_accuracy": float(np.mean((predicted > 0) == (actual > 0))),
                     "accuracy": None,
@@ -202,8 +200,7 @@ def _performance_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "brier_score": float(np.mean((probability - binary) ** 2)),
                     "log_loss": float(
                         -np.mean(
-                            binary * np.log(probability)
-                            + (1 - binary) * np.log(1 - probability)
+                            binary * np.log(probability) + (1 - binary) * np.log(1 - probability)
                         )
                     ),
                     "auc": _auc(binary, probability),

@@ -96,9 +96,7 @@ def calculate_event_outcomes(
         pre_skew = _finite(event.get("skew"))
         atm_change = post_atm - atm if post_atm is not None else None
         skew_change = (
-            post_skew - pre_skew
-            if post_skew is not None and pre_skew is not None
-            else None
+            post_skew - pre_skew if post_skew is not None and pre_skew is not None else None
         )
         iv_change_pnl = (
             vega_scale * atm_change / math.sqrt(annualization_days)

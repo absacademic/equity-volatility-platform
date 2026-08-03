@@ -1,66 +1,23 @@
 project:
-  name: equity-volatility-platform
+  name: equity-volatility-platform-week6
   timezone: America/New_York
   day_count_basis: 365.0
 
 universe:
-  symbols:
-    - SPY
-  underlying_type: ETF
+  symbols: [AAPL, SPY, XSP]
+  underlying_type: mixed
 
 pricing:
   default_model: black_scholes
   default_rate: 0.04
   default_dividend_yield: 0.012
-  iv:
-    initial_volatility: 0.20
-    minimum_volatility: 1.0e-8
-    maximum_volatility: 10.0
-    price_tolerance: 1.0e-10
-    volatility_tolerance: 1.0e-10
-    max_iterations: 100
+  iv: {}
 
 paths:
   raw_data: data/raw
   interim_data: data/interim
   processed_data: data/processed
   reports: reports/generated
-
-data:
-  schema_version: "1.0.0"
-  alignment:
-    max_underlying_staleness_seconds: 300
-  cleaning:
-    max_relative_spread: 0.50
-    min_volume: 1
-    min_open_interest: 1
-    min_moneyness: 0.50
-    max_moneyness: 1.50
-
-surface:
-  spline_smoothing: 1.0e-7
-  forward:
-    max_pairs: 5
-    maximum_atm_distance: 0.10
-    reliable_relative_dispersion: 0.005
-    minimum_average_quality: 0.50
-  exercise_style: american
-  dividends:
-    use_forward_fallback: true
-    exclude_early_exercise_risk: true
-  arbitrage:
-    price_tolerance: 1.0e-6
-    variance_tolerance: 1.0e-10
-    calendar_tolerance: 1.0e-6
-    extrapolation_padding: 0.15
-    maximum_extrapolated_iv: 3.0
-    maximum_variance_multiple: 8.0
-  standardized:
-    extrapolation_limit: 0.15
-  historical:
-    annualization_days: 252
-    realized_windows: [5, 20, 60]
-    rolling_window: 20
 
 event_study:
   pre_event_days: 20
@@ -118,13 +75,13 @@ strategy:
 
 sensitivity:
   prediction_thresholds: [0.0000, 0.0008]
-  holding_period_days: [1, 3]
+  holding_period_days: [1, 3, 5]
   hedge_frequency_days: [1, 2]
-  option_slippage_fraction_of_spread: [0.00, 0.15]
+  option_slippage_fraction_of_spread: [0.00, 0.20]
   commission_per_contract: [0.65]
   hedge_cost_bps: [1.0, 3.0]
   minimum_open_interest: [100]
-  maximum_relative_spread: [0.35]
+  maximum_relative_spread: [0.25, 0.35]
   year_ranges:
     - [2018, 2021]
     - [2022, 2025]

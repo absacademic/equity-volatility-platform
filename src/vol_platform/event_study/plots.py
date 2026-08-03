@@ -51,9 +51,7 @@ def create_event_study_plots(
     figure.savefig(path, dpi=160)
     paths.append(path)
 
-    linear = coefficients.filter(
-        (pl.col("model") == "linear") & (pl.col("feature") != "intercept")
-    )
+    linear = coefficients.filter((pl.col("model") == "linear") & (pl.col("feature") != "intercept"))
     if not linear.is_empty():
         figure = Figure()
         FigureCanvasAgg(figure)

@@ -17,23 +17,24 @@ venv/
 .env.*
 !.env.example
 
-# IDE stuff
+# IDE and operating-system files
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# Data, reports
+# Generated data and reports
 /data/raw/*
 /data/interim/*
 /data/processed/*
 !/data/raw/.gitkeep
 !/data/interim/.gitkeep
 !/data/processed/.gitkeep
-/reports/generated/
-
-# Notebooks
-.ipynb_checkpoints/!/data/raw/sample_spy_quotes.csv
+!/data/raw/sample_spy_quotes.csv
 !/data/raw/sample_spy_underlying.csv
 !/data/raw/sample_spy_rates.csv
 !/data/raw/sample_spy_events.csv
+/reports/generated/
+
+# Notebooks
+.ipynb_checkpoints/

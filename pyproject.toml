@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "equity-volatility-platform"
-version = "0.5.0"
-description = "Research infrastructure for equity option pricing, implied volatility, surface features, and P&L attribution."
+version = "0.6.0"
+description = "Research infrastructure for option pricing, volatility surfaces, event studies, and exact contract-level strategy backtesting."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "AGPLv3" }
-authors = [{ name = "Test" }]
+authors = [{ name = "test" }]
 dependencies = [
     "numpy>=1.26",
     "scipy>=1.12",

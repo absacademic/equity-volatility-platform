@@ -39,9 +39,7 @@ def _best_fit(
     fits: list[SmileFit],
 ) -> tuple[SmileFit | None, dict[str, Any] | None]:
     candidates = details.filter(
-        (pl.col("expiration") == expiration)
-        & pl.col("fit_success")
-        & pl.col("rmse").is_not_null()
+        (pl.col("expiration") == expiration) & pl.col("fit_success") & pl.col("rmse").is_not_null()
     ).sort(["rmse", "model", "weighting"])
     if candidates.is_empty():
         return None, None
@@ -244,9 +242,7 @@ def build_daily_volatility_features(
             & (pl.col("expiration") == expiration)
         )
         point_map = {row["point"]: row for row in local_points.iter_rows(named=True)}
-        values = {
-            name: point_map.get(name, {}).get("implied_volatility") for name in POINT_NAMES
-        }
+        values = {name: point_map.get(name, {}).get("implied_volatility") for name in POINT_NAMES}
         strikes = {name: point_map.get(name, {}).get("strike") for name in POINT_NAMES}
         statuses = {name: point_map.get(name, {}).get("status") for name in POINT_NAMES}
 
@@ -279,12 +275,8 @@ def build_daily_volatility_features(
             "expiration": expiration,
             "time_to_expiry": float(frame["time_to_expiry"].median()),
             "forward": float(frame["forward"].median()),
-            "dividend_present_value": _median_or_default(
-                frame, "dividend_present_value"
-            ),
-            "dividend_yield_estimate": _median_or_default(
-                frame, "dividend_yield_estimate"
-            ),
+            "dividend_present_value": _median_or_default(frame, "dividend_present_value"),
+            "dividend_yield_estimate": _median_or_default(frame, "dividend_yield_estimate"),
             "early_exercise_risk_count": _count_true(frame, "early_exercise_risk"),
             "total_option_volume": _sum_or_default(frame, "volume"),
             "total_open_interest": _sum_or_default(frame, "open_interest"),
@@ -300,9 +292,7 @@ def build_daily_volatility_features(
             "strike_10d_call": strikes["10d_call"],
             "downside_skew_25": put_25 - atm if put_25 is not None and atm is not None else None,
             "risk_reversal_25": (
-                call_25 - put_25
-                if call_25 is not None and put_25 is not None
-                else None
+                call_25 - put_25 if call_25 is not None and put_25 is not None else None
             ),
             "butterfly_25": (
                 0.5 * (put_25 + call_25) - atm
@@ -316,10 +306,9 @@ def build_daily_volatility_features(
             ),
             "iv_bid_ask_width": _median_or_default(
                 frame.with_columns(
-                    (
-                        pl.col("ask_implied_volatility")
-                        - pl.col("bid_implied_volatility")
-                    ).alias("_iv_width")
+                    (pl.col("ask_implied_volatility") - pl.col("bid_implied_volatility")).alias(
+                        "_iv_width"
+                    )
                 ),
                 "_iv_width",
                 default=None,
@@ -330,9 +319,7 @@ def build_daily_volatility_features(
             "surface_weighting": best.get("weighting"),
             "arbitrage_violation_count": violations.height,
             "material_arbitrage_violation_count": unresolved_material.height,
-            "resolved_arbitrage_violation_count": violations.filter(
-                pl.col("resolved")
-            ).height,
+            "resolved_arbitrage_violation_count": violations.filter(pl.col("resolved")).height,
             "midpoint_violation_count": violations.filter(pl.col("source") == "midpoint").height,
             "executable_violation_count": violations.filter(
                 pl.col("source") == "executable_bid_ask"

@@ -25,6 +25,7 @@ from vol_platform.event_study.datasets import (
     select_pre_event_surface_features,
 )
 from vol_platform.event_study.models import DEFAULT_FEATURES, run_baseline_models
+from vol_platform.event_study.nonlinear import run_gated_polynomial_model
 from vol_platform.event_study.outcomes import calculate_event_outcomes
 from vol_platform.event_study.plots import create_event_study_plots
 
@@ -44,6 +45,9 @@ class EventStudyResult:
     walk_forward_performance: Path
     strategy_backtest: Path
     strategy_summary: Path
+    nonlinear_predictions: Path
+    nonlinear_performance: Path
+    nonlinear_status: Path
     pnl_attribution: Path
     conclusion: Path
     report: Path
@@ -171,9 +175,23 @@ def run_event_study(
         ridge=float(settings.get("ridge", 1.0e-6)),
         minimum_walk_forward_train=minimum_walk_forward_train,
     )
-    backtest, attribution, strategy_summary = run_event_strategy_backtest(
-        model_outputs.dataset
+    nonlinear_settings = settings.get("nonlinear", {})
+    if not isinstance(nonlinear_settings, dict):
+        nonlinear_settings = {}
+    nonlinear_outputs = run_gated_polynomial_model(
+        model_outputs.dataset,
+        model_outputs.performance,
+        model_outputs.stability,
+        model_outputs.walk_forward_performance,
+        features=tuple(settings.get("features", DEFAULT_FEATURES)),
+        ridge=float(nonlinear_settings.get("ridge", 0.01)),
+        enabled=bool(nonlinear_settings.get("enabled", True)),
+        minimum_directional_accuracy=float(
+            nonlinear_settings.get("minimum_directional_accuracy", 0.50)
+        ),
+        minimum_sign_stability=float(nonlinear_settings.get("minimum_sign_stability", 0.60)),
     )
+    backtest, attribution, strategy_summary = run_event_strategy_backtest(model_outputs.dataset)
     summary, regimes = build_summary_tables(backtest)
 
     default_root = Path(config.paths["processed_data"]) / "event-studies" / symbol.lower()
@@ -188,6 +206,7 @@ def run_event_study(
         "walk_forward_results": root / "walk-forward-results.parquet",
         "strategy_backtest": root / "strategy-backtest.parquet",
         "pnl_attribution": root / "pnl-attribution.parquet",
+        "nonlinear_predictions": root / "nonlinear-predictions.parquet",
     }
     _write_pair(events, paths["events"], root / "point-in-time-events.csv")
     _write_pair(windows, paths["windows"], root / "event-windows.csv")
@@ -197,11 +216,12 @@ def run_event_study(
         paths["walk_forward_results"],
         root / "walk-forward-results.csv",
     )
+    _write_pair(backtest, paths["strategy_backtest"], root / "strategy-backtest.csv")
+    _write_pair(attribution, paths["pnl_attribution"], root / "pnl-attribution.csv")
     _write_pair(
-        backtest, paths["strategy_backtest"], root / "strategy-backtest.csv"
-    )
-    _write_pair(
-        attribution, paths["pnl_attribution"], root / "pnl-attribution.csv"
+        nonlinear_outputs.predictions,
+        paths["nonlinear_predictions"],
+        root / "nonlinear-predictions.csv",
     )
 
     summary_path = root / "summary-analysis.csv"
@@ -211,6 +231,8 @@ def run_event_study(
     stability_path = root / "coefficient-stability.csv"
     walk_performance_path = root / "walk-forward-performance.csv"
     strategy_summary_path = root / "strategy-summary.csv"
+    nonlinear_performance_path = root / "nonlinear-model-performance.csv"
+    nonlinear_status_path = root / "nonlinear-model-status.csv"
     summary.write_csv(summary_path)
     regimes.write_csv(regimes_path)
     model_outputs.coefficients.write_csv(coefficients_path)
@@ -218,10 +240,11 @@ def run_event_study(
     model_outputs.stability.write_csv(stability_path)
     model_outputs.walk_forward_performance.write_csv(walk_performance_path)
     strategy_summary.write_csv(strategy_summary_path)
+    nonlinear_outputs.performance.write_csv(nonlinear_performance_path)
+    nonlinear_outputs.status.write_csv(nonlinear_status_path)
 
     synthetic = any(
-        "synthetic" in str(value).lower()
-        for value in events["source"].drop_nulls().to_list()
+        "synthetic" in str(value).lower() for value in events["source"].drop_nulls().to_list()
     )
     conclusion_text = build_research_conclusion(
         model_outputs.performance,
@@ -245,15 +268,15 @@ def run_event_study(
                 "symbol": symbol.upper(),
                 "event_count": events.height,
                 "modeled_event_count": backtest.height,
-                "point_in_time_invalid_count": events.filter(
-                    ~pl.col("point_in_time_valid")
-                ).height,
+                "point_in_time_invalid_count": events.filter(~pl.col("point_in_time_valid")).height,
                 "window": {
                     "pre_event_days": int(settings.get("pre_event_days", 20)),
                     "post_event_days": int(settings.get("post_event_days", 5)),
                 },
                 "features": list(settings.get("features", DEFAULT_FEATURES)),
-                "pnl_method": "daily_atm_straddle_approximation",
+                "pnl_method": "daily_atm_straddle_approximation_for_signal_research",
+                "exact_execution_pipeline": "vol-platform strategy-backtest",
+                "nonlinear_model_status": nonlinear_outputs.status.row(0, named=True),
                 "synthetic_inputs": synthetic,
                 "conclusion": conclusion_text.strip(),
                 "plots": [str(path) for path in plot_paths],
@@ -276,6 +299,9 @@ def run_event_study(
         walk_forward_performance=walk_performance_path,
         strategy_backtest=paths["strategy_backtest"],
         strategy_summary=strategy_summary_path,
+        nonlinear_predictions=paths["nonlinear_predictions"],
+        nonlinear_performance=nonlinear_performance_path,
+        nonlinear_status=nonlinear_status_path,
         pnl_attribution=paths["pnl_attribution"],
         conclusion=conclusion_path,
         report=report_path,

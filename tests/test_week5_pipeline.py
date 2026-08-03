@@ -21,10 +21,10 @@ pricing:
   default_dividend_yield: 0.012
   iv: {{}}
 paths:
-  raw_data: {tmp_path / 'raw'}
-  interim_data: {tmp_path / 'interim'}
-  processed_data: {tmp_path / 'processed'}
-  reports: {tmp_path / 'reports'}
+  raw_data: {tmp_path / "raw"}
+  interim_data: {tmp_path / "interim"}
+  processed_data: {tmp_path / "processed"}
+  reports: {tmp_path / "reports"}
 event_study:
   pre_event_days: 20
   post_event_days: 5
@@ -77,17 +77,13 @@ def test_week_five_completion_criterion(tmp_path: Path) -> None:
     assert {"train", "validation", "test"}.issubset(set(dataset["period"].to_list()))
     assert {"linear", "logistic"} == set(performance["model"].to_list())
     assert len(result.plots) == 4
-    assert "Synthetic demonstration conclusion" in result.conclusion.read_text(
-        encoding="utf-8"
-    )
+    assert "Synthetic demonstration conclusion" in result.conclusion.read_text(encoding="utf-8")
 
     connection = duckdb.connect(str(result.database), read_only=True)
     try:
         assert connection.execute("SELECT COUNT(*) FROM events").fetchone()[0] > 0
         assert connection.execute("SELECT COUNT(*) FROM dataset").fetchone()[0] == dataset.height
-        attribution_count = connection.execute(
-            "SELECT COUNT(*) FROM pnl_attribution"
-        ).fetchone()[0]
+        attribution_count = connection.execute("SELECT COUNT(*) FROM pnl_attribution").fetchone()[0]
         assert attribution_count == dataset.height
     finally:
         connection.close()

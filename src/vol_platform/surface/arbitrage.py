@@ -76,7 +76,9 @@ def _diagnostic(
         "severity": (
             "material"
             if violation and value < -10.0 * tolerance
-            else "warning" if violation else "none"
+            else "warning"
+            if violation
+            else "none"
         ),
         "resolved": False,
         "message": message,
@@ -140,9 +142,7 @@ def _market_static_diagnostics(
             weight_left = (right - center) / (right - left)
             weight_right = 1.0 - weight_left
             midpoint_margin = (
-                weight_left * mids[index - 1]
-                + weight_right * mids[index + 1]
-                - mids[index]
+                weight_left * mids[index - 1] + weight_right * mids[index + 1] - mids[index]
             )
             executable_margin = (
                 weight_left * asks[index - 1] + weight_right * asks[index + 1] - bids[index]
@@ -229,9 +229,7 @@ def _market_calendar_diagnostics(iv_data: pl.DataFrame, tolerance: float) -> lis
             short_bid = np.interp(
                 grid, short_x, np.asarray(short["bid_total_variance"], dtype=float)
             )
-            long_ask = np.interp(
-                grid, long_x, np.asarray(long["ask_total_variance"], dtype=float)
-            )
+            long_ask = np.interp(grid, long_x, np.asarray(long["ask_total_variance"], dtype=float))
             midpoint_margin = float(np.min(long_mid - short_mid))
             executable_margin = float(np.min(long_ask - short_bid))
             location = float(grid[int(np.argmin(long_mid - short_mid))])
@@ -386,9 +384,7 @@ def apply_surface_controls(
         elif convexity_margin < -10.0 * price_tolerance:
             failed_check, failed_value = "butterfly_convexity", convexity_margin
         elif unreasonable:
-            failed_check, failed_value = "unreasonable_extrapolation", float(
-                np.nanmax(extended_iv)
-            )
+            failed_check, failed_value = "unreasonable_extrapolation", float(np.nanmax(extended_iv))
 
         if failed_check is not None:
             candidate = replace(
@@ -581,8 +577,7 @@ def _fitted_diagnostics(
         extrapolation_margin = (
             min(
                 maximum_extrapolated_iv - float(np.nanmax(extended_iv)),
-                maximum_variance_multiple * maximum_observed
-                - float(np.nanmax(extended_variance)),
+                maximum_variance_multiple * maximum_observed - float(np.nanmax(extended_variance)),
                 float(np.nanmin(extended_variance)),
             )
             if np.all(np.isfinite(extended_variance))
@@ -600,8 +595,7 @@ def _fitted_diagnostics(
                 value=extrapolation_margin,
                 tolerance=variance_tolerance,
                 message=(
-                    "The fitted wings must remain finite, positive, and within "
-                    "configured limits."
+                    "The fitted wings must remain finite, positive, and within configured limits."
                 ),
             )
         )
@@ -613,9 +607,8 @@ def _fitted_diagnostics(
         if upper <= lower:
             continue
         grid = np.linspace(lower, upper, 101)
-        margin_values = (
-            long_fit.predict_total_variance(grid)
-            - short_fit.predict_total_variance(grid)
+        margin_values = long_fit.predict_total_variance(grid) - short_fit.predict_total_variance(
+            grid
         )
         frame = iv_data.filter(pl.col("expiration") == long_expiration)
         rows.append(
@@ -630,8 +623,7 @@ def _fitted_diagnostics(
                 value=float(np.min(margin_values)),
                 tolerance=calendar_tolerance,
                 message=(
-                    f"Selected fitted variance at {long_expiration} must exceed "
-                    f"{short_expiration}."
+                    f"Selected fitted variance at {long_expiration} must exceed {short_expiration}."
                 ),
             )
         )
@@ -705,9 +697,7 @@ def mark_resolved_diagnostics(
             row["check"],
         )
         row["resolved"] = bool(
-            row["source"] == "fitted_surface"
-            and row["is_violation"]
-            and key in resolved_keys
+            row["source"] == "fitted_surface" and row["is_violation"] and key in resolved_keys
         )
         rows.append(row)
     return pl.DataFrame(rows, schema=DIAGNOSTIC_SCHEMA, strict=False)

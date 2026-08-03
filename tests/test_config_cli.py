@@ -140,3 +140,35 @@ def test_implied_vol_cli_failure_has_nonzero_exit() -> None:
     )
     assert result.exit_code == 1
     assert json.loads(result.output)["status"] == "price_above_upper_bound"
+
+
+def test_monte_carlo_barrier_cli() -> None:
+    result = runner.invoke(
+        app,
+        [
+            "monte-carlo-barrier",
+            "--spot",
+            "100",
+            "--strike",
+            "100",
+            "--barrier",
+            "125",
+            "--time",
+            "0.5",
+            "--rate",
+            "0.04",
+            "--vol",
+            "0.25",
+            "--paths",
+            "2000",
+            "--steps",
+            "16",
+            "--seed",
+            "5",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["price"] >= 0.0
+    assert payload["path_count"] == 2000
+    assert 0.0 <= payload["knock_probability"] <= 1.0

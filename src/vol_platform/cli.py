@@ -7,11 +7,15 @@ from pathlib import Path
 import typer
 
 from vol_platform.data.pipeline import run_ingestion
+from vol_platform.event_study.history import build_event_history
 from vol_platform.event_study.pipeline import run_event_study
 from vol_platform.event_study.synthetic import write_synthetic_event_study_inputs
 from vol_platform.pricing import black76, black_scholes
 from vol_platform.pricing.greeks import calculate_greeks
 from vol_platform.pricing.implied_vol import solve_implied_volatility
+from vol_platform.pricing.monte_carlo import BarrierType, price_barrier_option
+from vol_platform.strategy.pipeline import run_strategy_backtest
+from vol_platform.strategy.synthetic import write_synthetic_week6_inputs
 from vol_platform.surface.pipeline import run_surface_analysis
 from vol_platform.surface.synthetic import write_synthetic_inputs
 from vol_platform.types import OptionType, PricingModel
@@ -101,6 +105,43 @@ def implied_vol_command(
     typer.echo(json.dumps(asdict(result), indent=2, default=str))
     if not result.converged:
         raise typer.Exit(code=1)
+
+
+@app.command("monte-carlo-barrier")
+def monte_carlo_barrier_command(
+    spot: float = typer.Option(..., "--spot"),
+    strike: float = typer.Option(..., "--strike"),
+    barrier: float = typer.Option(..., "--barrier"),
+    time_to_expiry: float = typer.Option(..., "--time", help="Years to expiry"),
+    rate: float = typer.Option(..., "--rate"),
+    volatility: float = typer.Option(..., "--vol"),
+    option_type: OptionType = typer.Option(OptionType.CALL, "--type"),
+    barrier_type: BarrierType = typer.Option(BarrierType.UP_AND_OUT, "--barrier-type"),
+    dividend_yield: float = typer.Option(0.0, "--dividend-yield"),
+    rebate: float = typer.Option(0.0, "--rebate"),
+    paths: int = typer.Option(100_000, "--paths"),
+    steps: int = typer.Option(252, "--steps"),
+    seed: int = typer.Option(7, "--seed"),
+    antithetic: bool = typer.Option(True, "--antithetic/--no-antithetic"),
+) -> None:
+    # Price a discretely monitored barrier option under geometric Brownian motion
+    result = price_barrier_option(
+        spot,
+        strike,
+        barrier,
+        time_to_expiry,
+        rate,
+        volatility,
+        option_type,
+        barrier_type,
+        dividend_yield=dividend_yield,
+        rebate=rebate,
+        paths=paths,
+        steps=steps,
+        seed=seed,
+        antithetic=antithetic,
+    )
+    typer.echo(json.dumps(asdict(result), indent=2))
 
 
 @app.command("ingest")
@@ -266,8 +307,88 @@ def event_study_command(
                 "walk_forward_performance": str(result.walk_forward_performance),
                 "strategy_backtest": str(result.strategy_backtest),
                 "strategy_summary": str(result.strategy_summary),
+                "nonlinear_predictions": str(result.nonlinear_predictions),
+                "nonlinear_performance": str(result.nonlinear_performance),
+                "nonlinear_status": str(result.nonlinear_status),
                 "pnl_attribution": str(result.pnl_attribution),
                 "conclusion": str(result.conclusion),
+                "report": str(result.report),
+                "database": str(result.database),
+                "plots": [str(path) for path in result.plots],
+            },
+            indent=2,
+        )
+    )
+
+
+@app.command("build-event-history")
+def build_event_history_command(
+    macro_events_file: Path | None = typer.Option(
+        None, "--macro-events", exists=True, dir_okay=False
+    ),
+    earnings_events_file: Path | None = typer.Option(
+        None, "--earnings-events", exists=True, dir_okay=False
+    ),
+    underlying_file: Path | None = typer.Option(None, "--underlying", exists=True, dir_okay=False),
+    large_move_threshold: float = typer.Option(0.03, "--large-move-threshold"),
+    market_symbols: str = typer.Option("SPY", "--market-symbols"),
+    output_file: Path = typer.Option(
+        Path("data/processed/events/combined-event-history.csv"), "--output"
+    ),
+) -> None:
+    # Combine supplied macro and earnings calendars with derived large-move events
+    events = build_event_history(
+        macro_events_file=macro_events_file,
+        earnings_events_file=earnings_events_file,
+        underlying_file=underlying_file,
+        large_move_threshold=large_move_threshold,
+        market_symbols=tuple(
+            item.strip().upper() for item in market_symbols.split(",") if item.strip()
+        ),
+    )
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    if output_file.suffix.lower() == ".parquet":
+        events.write_parquet(output_file)
+    else:
+        events.write_csv(output_file)
+    typer.echo(json.dumps({"event_count": events.height, "output": str(output_file)}, indent=2))
+
+
+@app.command("synthetic-week6")
+def synthetic_week6_command(
+    output_dir: Path = typer.Option(Path("data/interim/week6-demo"), "--output-dir"),
+) -> None:
+    # Write deterministic long-history, multi-asset, contract-level sample inputs
+    paths = write_synthetic_week6_inputs(output_dir)
+    typer.echo(json.dumps({name: str(path) for name, path in paths.items()}, indent=2))
+
+
+@app.command("strategy-backtest")
+def strategy_backtest_command(
+    signals_file: Path = typer.Argument(..., exists=True, dir_okay=False),
+    option_quotes_file: Path = typer.Option(..., "--option-quotes", exists=True, dir_okay=False),
+    underlying_file: Path = typer.Option(..., "--underlying", exists=True, dir_okay=False),
+    config_path: Path = typer.Option(Path("configs/base.yml"), "--config"),
+    output_dir: Path | None = typer.Option(None, "--output-dir"),
+) -> None:
+    # Run exact contract-level option and periodic delta-hedge P&L
+    result = run_strategy_backtest(
+        signals_file,
+        option_quotes_file,
+        underlying_file,
+        config_path=config_path,
+        output_dir=output_dir,
+    )
+    typer.echo(
+        json.dumps(
+            {
+                "output_dir": str(result.output_dir),
+                "trades": str(result.trades),
+                "metrics": str(result.metrics),
+                "attribution": str(result.attribution),
+                "hedge_log": str(result.hedge_log),
+                "rejections": str(result.rejections),
+                "sensitivity": str(result.sensitivity),
                 "report": str(result.report),
                 "database": str(result.database),
                 "plots": [str(path) for path in result.plots],

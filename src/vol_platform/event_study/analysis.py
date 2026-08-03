@@ -17,9 +17,7 @@ def add_regimes(dataset: pl.DataFrame) -> pl.DataFrame:
             "high_iv" if percentile is not None and float(percentile) >= 0.50 else "low_iv"
         )
         row["surface_regime"] = (
-            "dislocated"
-            if dislocation is not None and float(dislocation) >= 1.0
-            else "normal"
+            "dislocated" if dislocation is not None and float(dislocation) >= 1.0 else "normal"
         )
         rows.append(row)
     return pl.DataFrame(rows) if rows else dataset
@@ -77,13 +75,9 @@ def build_research_conclusion(
     r_squared = test_model["r_squared"][0] if test_model.height else None
     directional = test_model["directional_accuracy"][0] if test_model.height else None
     net = test_strategy["mean_net_return"][0] if test_strategy.height else None
-    r_squared = (
-        float(r_squared) if r_squared is not None and np.isfinite(r_squared) else None
-    )
+    r_squared = float(r_squared) if r_squared is not None and np.isfinite(r_squared) else None
     directional = (
-        float(directional)
-        if directional is not None and np.isfinite(directional)
-        else None
+        float(directional) if directional is not None and np.isfinite(directional) else None
     )
     net = float(net) if net is not None and np.isfinite(net) else None
     prefix = "Synthetic demonstration conclusion" if synthetic else "Research conclusion"

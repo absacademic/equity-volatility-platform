@@ -46,9 +46,7 @@ def test_chronological_models_and_backtest() -> None:
         minimum_walk_forward_train=12,
     )
     assert outputs.dataset["period"].to_list()[:3] == ["train", "train", "train"]
-    assert {"train", "validation", "test"}.issubset(
-        set(outputs.performance["period"].to_list())
-    )
+    assert {"train", "validation", "test"}.issubset(set(outputs.performance["period"].to_list()))
     assert {"ci_lower_95", "ci_upper_95"}.issubset(outputs.coefficients.columns)
     assert outputs.walk_forward_predictions.height > 0
     assert outputs.stability["sign_stable"].null_count() == 0

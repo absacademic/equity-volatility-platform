@@ -4,36 +4,6 @@ A Python-based research platform for equity-option pricing, implied-volatility e
 
 The initial research universe is **SPY**, chosen because it is a highly liquid ETF.
 
-## Current Status:
-
-Inital phase: 
-Repo being set-up along with environment and basic pricing models and implied-volatility solver. Typer CLI interfaced with ordinary typed parameters included along with DuckDB table definitions, RUFF linting/formattting, and a number of unit and integration tests.
-
-Phase 2:
-Added a reproducible data pipeline for option quotes, underlying prices, interest rates, and event data. Raw quotes are normalized, aligned with underlying prices, checked for data-quality problems, and stored as clean and rejected Parquet datasets. The pipeline also creates analytical DuckDB views, metadata manifests, and data-quality reports.
-
-Phase 3:
-Added an implied-volatility smile and surface pipeline. The pipeline calculates exact time to expiration, interpolates continuously compounded zero rates, estimates forwards from several near-ATM call-put pairs, and calculates bid, midpoint, and ask implied volatilities.
-
-Cubic-spline and SVI smiles are fitted using equal, vega, spread, and quote-quality weighting. The models are compared using RMSE, maximum residual, coverage, stability, and failed-fit rates. The pipeline also produces smile, residual, surface, bid-ask-band, and ATM term-structure plots.
-
-Phase 4:
-
-Added no-arbitrage diagnostics, dividend and early-exercise adjustments, standardized delta-point interpolation, event-linked volatility features, and historical surface comparisons.
-
-The pipeline now checks midpoint prices, executable bid-ask prices, and fitted surfaces separately for strike-monotonicity, butterfly-convexity, negative-total-variance, calendar-consistency, and extrapolation violations. Small numerical errors can be adjusted, while materially invalid surfaces are rejected. Every adjustment is recorded.
-
-The platform interpolates 10-delta put, 25-delta put, ATM, 25-delta call, and 10-delta call volatility points. It produces one point-in-time feature row per symbol, date, and expiration containing volatility, skew, risk-reversal, butterfly, curvature, term-structure, residual, realized-volatility, volatility-risk-premium, event, and historical-comparison features.
-
-Phase 5:
-
-Added a point-in-time event-study pipeline that tests whether volatility-surface features observed before CPI releases, Federal Reserve meetings, earnings announcements, or other dated market events predict whether the options market overestimates or underestimates the subsequent move.
-
-The pipeline constructs trading-day windows from 20 days before through 5 days after each event. It measures pre-event ATM volatility, skew, term structure, expected move, volume and open-interest changes, IV percentile, and surface dislocation. It then calculates realized event moves, expected-versus-realized errors, post-event IV collapse, changes in skew and ATM volatility, and a cost-adjusted daily straddle approximation.
-
-Baseline linear and logistic regressions use chronological training, validation, and test periods rather than random splits. The outputs include coefficients, approximate 95% confidence intervals, out-of-sample metrics, coefficient stability, expanding walk-forward results, transaction-cost-aware strategy backtests, P&L attribution, and a clearly stated research conclusion.
-
-
 ## Startup
 
 ```bash
@@ -88,6 +58,22 @@ sudo apt-get update
 sudo apt-get install -y tzdata
 ```
 
+The repository can also be run in Docker:
+
+```bash
+docker build -t equity-volatility-platform:0.6.0 .
+docker run --rm equity-volatility-platform:0.6.0 vol-platform --help
+```
+
+Run complete deterministic workflow with:
+
+```bash
+make reproduce
+```
+
+Detailed installation, architecture, strategy, real-data, reproduction, and disclaimer documentation is available in the `docs/` directory.
+
+
 ## CLI examples 
 
 Price a Black-Scholes call and return its Greeks:
@@ -123,6 +109,24 @@ Select Black-76 with:
 ```
 
 Note that the `--underlying` argument means spot under Black-Scholes and forward under Black-76.
+
+Price a discretely monitored up-and-out barrier call:
+
+```bash
+vol-platform monte-carlo-barrier \ 
+  --spot 100 \ 
+  --strike 100 \ 
+  --barrier 125 \ 
+  --time 1 \ 
+  --rate 0.04 \ 
+  --vol 0.25 \ 
+  --type call \ 
+  --barrier-type up_and_out \ 
+  --paths 100000 \ 
+  --steps 252 \ 
+  --seed 7
+```
+The result includes the simulated price, standard error, 95% confidence interval, path count, monitoring steps, and barrier-hit probability.
 
 ## Some numerical conventions used
 
@@ -328,6 +332,48 @@ expected
 
 Only surface observations timestamped before an event are used. Events known only after their event timestamp are marked invalid and excluded from modeling.
 
+Generate deterministic 2018-2025 sample:
+
+```bash
+vol-platform synthetic-week6 --output-dir data/interim/week6-demo
+```
+
+Run the exact contract-level strategy backtest:
+
+```bash
+vol-platform strategy-backtest data/interim/week6-demo/synthetic-week6-signals.csv \ 
+  --option-quotes data/interim/week6-demo/synthetic-week6-option-quotes.csv \ 
+  --underlying data/interim/week6-demo/synthetic-week6-underlying.csv \ 
+  --config configs/week6-example.yml \ 
+  --output-dir data/processed/strategies/week6-demo
+```
+
+The sample compares:
+
+- AAPL as an individual equity
+- SPY as an ETF
+- XSP as an index product
+- CPI, FOMC, earnings, and large-market-move events
+- Multiple years and volatility regimes
+
+On systems with Make installed:
+
+```bash
+make demo-week6
+```
+
+On Windows PowerShell:
+
+```bash
+vol-platform synthetic-week6 --output-dir data/interim/week6-demo 
+
+vol-platform strategy-backtest data/interim/week6-demo/synthetic-week6-signals.csv ` 
+  --option-quotes data/interim/week6-demo/synthetic-week6-option-quotes.csv ` 
+  --underlying data/interim/week6-demo/synthetic-week6-underlying.csv ` 
+  --config configs/week6-example.yml ` 
+  --output-dir data/processed/strategies/week6-demo
+```
+
 ## Data outputs
 
 Clean and rejected option quotes are stored as partitioned Parquet files:
@@ -461,11 +507,10 @@ The current straddle P&L is a daily approximation. Exact contract-level P&L woul
 - Early-exercise-risk contracts are excluded from parity estimation and smile fitting by default
 - Invalid chains remain in the feature table with `chain_valid = false`
 
-## TODO
+## DISCLAIMER
 
-Next...
-Apply the event-study pipeline to a longer real-market history of CPI, FOMC, earnings, and large-market-move events
-Replace the daily straddle approximation with exact contract-level option and hedge P&L
-Test alternative holding periods and transaction-cost assumptions
-Add nonlinear models only after the chronological baseline results are stable
-Compare results across individual equities, ETFs, and index products
+The bundled datasets are small synthetic or sample datasets intended to validate the software and demonstrate reproducible workflows. They are NOT evidence of a profitable trading strategy.
+
+Real-market research requires appropriately licensed option quotes, underlying prices, rates, dividend information, corporate-action records, and point-in-time event calendars. Historical midpoint prices should not be interpreted as executable fills. Live results may differ because of bid-ask spreads, slippage, commissions, margin requirements, financing, taxes, assignment, early exercise, market impact, timestamp quality, and data-vendor corrections.
+
+Some documentation and testing was AI-assisted to ensure cross-platform compatibility and complete records for how this project operates. The author does not make any claim for the commercial vailidity nor efficacy of this platform. 

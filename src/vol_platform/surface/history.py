@@ -132,8 +132,7 @@ def add_event_linked_features(
             if event.get("event_timestamp") is not None
             and _event_matches_symbol(event.get("symbols"), str(row["symbol"]))
             and (
-                event.get("known_timestamp") is None
-                or event["known_timestamp"] <= quote_timestamp
+                event.get("known_timestamp") is None or event["known_timestamp"] <= quote_timestamp
             )
         ]
         past = [event for event in matching if event["event_timestamp"] <= quote_timestamp]
@@ -216,9 +215,7 @@ def add_historical_comparisons(
             for column in HISTORICAL_COLUMNS:
                 value = row.get(column)
                 current = (
-                    float(value)
-                    if value is not None and math.isfinite(float(value))
-                    else None
+                    float(value) if value is not None and math.isfinite(float(value)) else None
                 )
                 row[f"{column}_change"] = (
                     current - previous[column]
@@ -228,9 +225,7 @@ def add_historical_comparisons(
                 history[column].append(current if current is not None else math.nan)
                 expanding = np.asarray(history[column], dtype=float)
                 rolling = expanding[-rolling_window:]
-                row[f"{column}_rolling_zscore"] = (
-                    _zscore(rolling) if current is not None else None
-                )
+                row[f"{column}_rolling_zscore"] = _zscore(rolling) if current is not None else None
                 row[f"{column}_expanding_zscore"] = (
                     _zscore(expanding) if current is not None else None
                 )
@@ -253,17 +248,14 @@ def add_historical_comparisons(
                 [
                     float(row[column])
                     for row in rows
-                    if row.get(column) is not None
-                    and math.isfinite(float(row[column]))
+                    if row.get(column) is not None and math.isfinite(float(row[column]))
                 ],
                 dtype=float,
             )
             for row in rows:
                 value = row.get(column)
                 finite_value = (
-                    float(value)
-                    if value is not None and math.isfinite(float(value))
-                    else None
+                    float(value) if value is not None and math.isfinite(float(value)) else None
                 )
                 row[f"{column}_cross_sectional_rank"] = (
                     float(np.mean(valid_values <= finite_value))

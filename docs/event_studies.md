@@ -80,3 +80,9 @@ The research conclusion is generated from held-out model performance and cost-ad
 ## Main outputs
 
 The output directory contains point-in-time events, event windows, the modeling dataset, summaries, regime comparisons, model coefficients and performance, walk-forward results, strategy results, P&L attribution, plots, a DuckDB database, a JSON report, and `research-conclusion.md`.
+
+## Nonlinear extension & history
+
+The event-study model remains chronological and point-in-time. A nonlinear degree-two ridge comparison is run only when the linear baseline passes configured test accuracy, coefficient-sign stability, and walk-forward checks.
+
+Use `vol-platform build-event-history` to combine CPI, FOMC, earnings, and derived large-market-move events. The final executable strategy is run separately with `vol-platform strategy-backtest`; its contract-level P&L replaces the Week 5 daily straddle approximation for strategy conclusions.

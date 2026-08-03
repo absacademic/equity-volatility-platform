@@ -21,10 +21,10 @@ pricing:
   default_dividend_yield: 0.012
   iv: {{}}
 paths:
-  raw_data: {tmp_path / 'raw'}
-  interim_data: {tmp_path / 'interim'}
-  processed_data: {tmp_path / 'processed'}
-  reports: {tmp_path / 'reports'}
+  raw_data: {tmp_path / "raw"}
+  interim_data: {tmp_path / "interim"}
+  processed_data: {tmp_path / "processed"}
+  reports: {tmp_path / "reports"}
 surface:
   spline_smoothing: 1.0e-7
   exercise_style: american
@@ -76,12 +76,12 @@ def test_week_four_completion_criterion(tmp_path: Path) -> None:
 
     connection = duckdb.connect(str(result.database), read_only=True)
     try:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM standardized_delta_points"
-        ).fetchone()[0] == 15
-        assert connection.execute(
-            "SELECT COUNT(*) FROM daily_volatility_features"
-        ).fetchone()[0] == 3
+        assert (
+            connection.execute("SELECT COUNT(*) FROM standardized_delta_points").fetchone()[0] == 15
+        )
+        assert (
+            connection.execute("SELECT COUNT(*) FROM daily_volatility_features").fetchone()[0] == 3
+        )
     finally:
         connection.close()
 

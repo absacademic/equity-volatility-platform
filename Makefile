@@ -1,4 +1,4 @@
-.PHONY: install lint format test check demo-ingest demo-surface demo-event-study
+.PHONY: install lint format test check demo-ingest demo-surface demo-event-study demo-week6 demo-barrier reproduce docker-build
 
 install:
 	python -m pip install -e ".[dev]"
@@ -39,3 +39,25 @@ demo-event-study:
 		--events data/interim/week5-demo/synthetic-week5-events.csv \
 		--underlying data/interim/week5-demo/synthetic-week5-underlying.csv \
 		--output-dir data/processed/event-studies/demo
+
+
+demo-week6:
+	vol-platform synthetic-week6 --output-dir data/interim/week6-demo
+	vol-platform strategy-backtest data/interim/week6-demo/synthetic-week6-signals.csv \
+		--option-quotes data/interim/week6-demo/synthetic-week6-option-quotes.csv \
+		--underlying data/interim/week6-demo/synthetic-week6-underlying.csv \
+		--config configs/week6-example.yml \
+		--output-dir data/processed/strategies/week6-demo
+
+
+demo-barrier:
+	vol-platform monte-carlo-barrier --spot 100 --strike 100 --barrier 125 \
+		--time 1 --rate 0.04 --vol 0.25 --type call \
+		--barrier-type up_and_out --paths 100000 --steps 252 --seed 7
+
+
+reproduce: check demo-ingest demo-surface demo-event-study demo-week6 demo-barrier
+
+
+docker-build:
+	docker build -t equity-volatility-platform:0.6.0 .

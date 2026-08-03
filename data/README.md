@@ -18,3 +18,7 @@ Event-study inputs and outputs:
 
 - `interim/week5-demo/`: synthetic event, underlying-price, and surface-feature inputs
 - `processed/event-studies/`: point-in-time events, event windows, models, backtests, attribution, plots, and conclusions
+
+## Deterministic panel
+
+`vol-platform synthetic-week6` creates a 2018-2025 sample under `data/interim/week6-demo`. Generated files include events, underlying prices, surface features, contract-level option quotes, and chronological strategy signals for AAPL, SPY, and XSP.

@@ -76,8 +76,7 @@ def add_dividend_and_exercise_features(
             american
             and option_type == "call"
             and intrinsic > 0.0
-            and present_value
-            > interest_benefit + time_value + max(spread, 1e-8)
+            and present_value > interest_benefit + time_value + max(spread, 1e-8)
         )
         put_risk = (
             american

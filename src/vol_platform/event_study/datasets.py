@@ -64,9 +64,7 @@ def normalize_point_in_time_events(
         session = classify_market_session(timestamp, timezone=timezone)
         event_date = local.date()
         reaction_date = (
-            _next_weekday(event_date)
-            if session in {"after_hours", "market_closed"}
-            else event_date
+            _next_weekday(event_date) if session in {"after_hours", "market_closed"} else event_date
         )
         known = raw.get("known_timestamp")
         valid = known is None or (isinstance(known, datetime) and known <= timestamp)
@@ -140,9 +138,7 @@ def _symbol_matches(value: object, symbol: str) -> bool:
     if value is None:
         return True
     symbols = {
-        part.strip().upper()
-        for part in str(value).replace(";", ",").split(",")
-        if part.strip()
+        part.strip().upper() for part in str(value).replace(";", ",").split(",") if part.strip()
     }
     return not symbols or symbol.upper() in symbols or bool(symbols & {"ALL", "MARKET"})
 
@@ -218,27 +214,21 @@ def select_pre_event_surface_features(
                 "pre_event_quote_timestamp": selected.get("quote_timestamp"),
                 "feature_expiration": selected.get("expiration"),
                 "feature_time_to_expiry": _finite(selected.get("time_to_expiry")),
-                "snapshot_lag_hours": (
-                    timestamp - selected["quote_timestamp"]
-                ).total_seconds()
+                "snapshot_lag_hours": (timestamp - selected["quote_timestamp"]).total_seconds()
                 / 3600.0,
                 "atm_volatility": atm,
                 "skew": _finite(selected.get("downside_skew_25")),
                 "term_structure": _finite(selected.get("atm_term_structure_slope")),
                 "expected_move": expected_move,
                 "volume_change": _finite(selected.get("total_option_volume_change")),
-                "open_interest_change": _finite(
-                    selected.get("total_open_interest_change")
-                ),
+                "open_interest_change": _finite(selected.get("total_open_interest_change")),
                 "iv_percentile": _finite(
                     selected.get("atm_implied_volatility_expanding_percentile")
                 ),
                 "surface_dislocation": _surface_dislocation(selected),
                 "iv_bid_ask_width": _finite(selected.get("iv_bid_ask_width")),
                 "surface_residual_rmse": _finite(selected.get("surface_residual_rmse")),
-                "realized_volatility_20d": _finite(
-                    selected.get("realized_volatility_20d")
-                ),
+                "realized_volatility_20d": _finite(selected.get("realized_volatility_20d")),
                 "vrp_variance_20d": _finite(selected.get("vrp_variance_20d")),
             }
         )

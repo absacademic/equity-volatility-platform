@@ -268,9 +268,7 @@ def _analyze_one_date(
         enriched,
         forwards,
         solver_options=solver_options,
-        exclude_early_exercise_risk=bool(
-            dividend_config.get("exclude_early_exercise_risk", True)
-        ),
+        exclude_early_exercise_risk=bool(dividend_config.get("exclude_early_exercise_risk", True)),
     )
     raw_fits = fit_all_smiles(
         iv_data,
@@ -386,10 +384,7 @@ def run_surface_analysis(
         all_features,
         underlying_history,
         annualization_days=int(historical.get("annualization_days", 252)),
-        windows=tuple(
-            int(value)
-            for value in historical.get("realized_windows", [5, 20, 60])
-        ),
+        windows=tuple(int(value) for value in historical.get("realized_windows", [5, 20, 60])),
     )
     all_features = add_event_linked_features(
         all_features,
@@ -488,9 +483,7 @@ def run_surface_analysis(
             "historical_plots": [str(path) for path in historical_plots],
         },
     }
-    (root / "surface-manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8"
-    )
+    (root / "surface-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return SurfaceAnalysisResult(
         quote_date=selected_date,
         input_rows=manifest["input_rows"],

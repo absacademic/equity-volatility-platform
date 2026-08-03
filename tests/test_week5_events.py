@@ -34,9 +34,7 @@ def test_point_in_time_event_windows_and_outcomes() -> None:
     trading_dates = [value for value in trading_dates if value.weekday() < 5]
     windows = build_event_windows(normalized, trading_dates, pre_days=20, post_days=5)
     assert windows.height == 26
-    assert windows.filter(pl.col("trading_day_offset") == 0)["window_date"][0] == date(
-        2026, 7, 14
-    )
+    assert windows.filter(pl.col("trading_day_offset") == 0)["window_date"][0] == date(2026, 7, 14)
 
     features = pl.DataFrame(
         {
